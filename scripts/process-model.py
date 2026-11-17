@@ -511,7 +511,7 @@ def blend_face_seams(out, xyz, region, voxel=0.003, ring=4):
     return out * (1 - w) + col * w
 
 
-def smooth_face(mesh, iters=6, lam=0.5, mu=-0.53):
+def smooth_face(mesh, iters=12, lam=0.5, mu=-0.53):
     """V2：臉部網格平滑（Taubin，不縮小），只作用在臉與脖子，邊緣漸弱。
     貼圖接縫上的重複頂點依位置合併後一起移動，避免裂開。"""
     v = mesh.vertices.copy()
@@ -593,10 +593,11 @@ def process_texture_tripo(img, xyz):
     # 磨皮：保留輪廓的平滑（雙邊濾波），眼、眉、唇的邊緣保留，膚色的顆粒與斑駁抹平（貼近影片裡的臉）
     import cv2
     a8 = (np.clip(a, 0, 1) * 255).astype(np.uint8)
-    sm = cv2.bilateralFilter(a8, 9, 28, 6).astype(np.float32) / 255
-    sm = cv2.bilateralFilter((sm * 255).astype(np.uint8), 7, 22, 4).astype(np.float32) / 255
+    sm = cv2.bilateralFilter(a8, 9, 40, 7).astype(np.float32) / 255
+    sm = cv2.bilateralFilter((sm * 255).astype(np.uint8), 9, 32, 6).astype(np.float32) / 255
+    sm = cv2.bilateralFilter((sm * 255).astype(np.uint8), 7, 24, 4).astype(np.float32) / 255
     skin_soft = (keep & skinish & ~lips).astype(np.float32)
-    skin_soft = cv2.GaussianBlur(skin_soft, (0, 0), 1.2)[..., None] * 0.85
+    skin_soft = cv2.GaussianBlur(skin_soft, (0, 0), 1.2)[..., None] * 0.95
     a = a * (1 - skin_soft) + sm * skin_soft
     # 左右半臉來自不同貼圖區塊、亮度不一：以中線兩側 2 cm 的膚色比例，校正較暗那一半（越靠中線校正越完整）
     strip = keep & skinish & (np.abs(X) < 0.02) & (Y > 1.45) & (Y < 1.62)
