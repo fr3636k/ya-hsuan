@@ -61,6 +61,7 @@
 
 - 公開網址：https://fr3636k.github.io/ya-hsuan/
 - 原始碼：https://github.com/fr3636k/ya-hsuan
-- 發布方式：推到 `main` 分支後，GitHub Actions（`.github/workflows/pages.yml`）自動把 `dist/` 發布到 GitHub Pages，約 1～2 分鐘生效。
-- 修改流程：改檔 → `npm run check` → 本機預覽（`node serve.mjs`）確認手機與桌機 → `git commit` → `git push`。
+- 發布方式：`dist/` 的內容推到 `gh-pages` 分支，GitHub Pages 直接提供該分支（約 1～2 分鐘生效）：
+  `git subtree split --prefix dist -b gh-pages && git push -f origin gh-pages`（之後每次更新都重跑這兩個指令，再 `git branch -D gh-pages`）。
+- 修改流程：改檔 → `npm run check` → 本機預覽（`node serve.mjs`）確認手機與桌機 → `git commit` → `git push origin main` → 上面的 gh-pages 指令。
 - 不會上傳：`data/`（參考照片）、`ai-input/`、`models-raw/`（AI 原始檔、影片素材、舊模型）、`qa/`、Tripo FBX 原始檔。
