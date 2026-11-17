@@ -61,7 +61,30 @@
 
 - 公開網址：https://fr3636k.github.io/ya-hsuan/
 - 原始碼：https://github.com/fr3636k/ya-hsuan
-- 發布方式：`dist/` 的內容推到 `gh-pages` 分支，GitHub Pages 直接提供該分支（約 1～2 分鐘生效）：
-  `git subtree split --prefix dist -b gh-pages && git push -f origin gh-pages`（之後每次更新都重跑這兩個指令，再 `git branch -D gh-pages`）。
-- 修改流程：改檔 → `npm run check` → 本機預覽（`node serve.mjs`）確認手機與桌機 → `git commit` → `git push origin main` → 上面的 gh-pages 指令。
+- 發布方式：推到 `main` 後，GitHub Actions（`.github/workflows/pages.yml`）自動把 `dist/` 發布到 GitHub Pages，約 1～2 分鐘生效。發布紀錄的名稱就是該次的提交訊息。
+- 修改流程：改檔 → `npm run check` → 本機預覽（`node serve.mjs`）確認手機與桌機 → 依下方規範 `git commit` → `git push`。
 - 不會上傳：`data/`（參考照片）、`ai-input/`、`models-raw/`（AI 原始檔、影片素材、舊模型）、`qa/`、Tripo FBX 原始檔。
+
+
+## Git 提交規範
+
+提交訊息採用 Conventional Commits，格式如下：
+
+```text
+<type>(<scope>): <簡短說明>
+```
+
+`scope` 使用簡短英文描述影響範圍，例如 `model`、`intro`、`finale`、`viewer`、`ui`、`docs`、`build` 或 `deploy`。若變更沒有明確範圍，可以省略 scope。
+
+| 類型 | 用途 | 本專案範例 |
+| --- | --- | --- |
+| `feat` | 新功能或新內容 | `feat(finale): 新增左手抓殼影片` |
+| `fix` | 修正錯誤 | `fix(model): 修正眼皮白線` |
+| `docs` | 文件更新 | `docs(readme): 更新發布流程` |
+| `build` | 建置、發布設定 | `build(deploy): 改用 GitHub Actions 發布` |
+| `refactor` | 不改變功能的程式整理 | `refactor(viewer): 整理視角切換` |
+
+- 主旨使用現在式，直接描述這次完成的變更；保持精簡，結尾不加句號。
+- 一個 commit 只處理一個主要目的。
+- 提交前至少執行 `npm run check`。
+- 不相容變更在類型後加 `!`，並於 commit body 說明。
