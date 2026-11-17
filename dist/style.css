@@ -266,6 +266,20 @@ body.ready .hero .copy {
   color: var(--muted);
   letter-spacing: 0.06em;
 }
+/* 開場跑完前：鎖住捲動、隱藏「向下滑動」 */
+html.intro-lock,
+html.intro-lock body {
+  overflow: hidden;
+  overscroll-behavior: none;
+  touch-action: none;
+}
+html.intro-lock .scroll-hint {
+  opacity: 0;
+  transform: translate(-50%, 10px);
+}
+.scroll-hint {
+  transition: opacity 1.2s ease, transform 1.2s ease;
+}
 .scroll-hint {
   position: absolute;
   left: 50%;

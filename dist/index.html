@@ -8,6 +8,8 @@
     <!-- 重新整理時一律回到最上方（不讓瀏覽器還原上次的捲動位置），開場才會從頭播 -->
     <script>
       if ("scrollRestoration" in history) history.scrollRestoration = "manual";
+      document.documentElement.classList.add("intro-lock"); // 開場跑完前不能捲動（story.js 解除）
+      setTimeout(() => document.documentElement.classList.remove("intro-lock"), 25000); // 保險：最久 25 秒
       window.scrollTo(0, 0);
       addEventListener("pageshow", () => window.scrollTo(0, 0));
     </script>
