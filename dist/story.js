@@ -101,8 +101,6 @@ function unlockIntro() {
   removeEventListener("touchmove", blockScroll);
   removeEventListener("keydown", blockKeys);
 }
-// 保險：任何意外，最多 25 秒後一定解鎖（index.html 開頭也有同樣的保險）
-setTimeout(() => isLocked() && unlockIntro(), 25000);
 let introT = 0,
   fullReady = false;
 garment.upgraded.then(() => ((fullReady = true), (document.body.dataset.full = "1")));
@@ -173,7 +171,7 @@ function frame() {
   }
   const ip = introFixed !== null ? +introFixed : INTRO ? introT / INTRO : 1;
   // 開場跑完（燈全亮）才能往下滑，並淡入「向下滑動」
-  if (isLocked() && (time >= 2 || ip >= 0.95 || forced !== null)) unlockIntro(); // 開場鎖 2 秒
+  if (isLocked() && (performance.now() >= 3000 || forced !== null)) unlockIntro(); // 打開網頁 3 秒後可以往下滑
   garment.set({ silk: cur.silk, reveal: cur.reveal, burst: cur.burst, grip: gripSeq ? 0 : gripEased }); // 有影片時 3D 不自己撥開
   const rh = rhythmAt(time);
   const phase = rh.phase;
