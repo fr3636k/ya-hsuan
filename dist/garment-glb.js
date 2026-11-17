@@ -60,6 +60,9 @@ export async function loadGarment(url, cfg = {}, onProgress) {
     uFaceOn: { value: faceTex ? 1 : 0 },
     uFaceRect: { value: new THREE.Vector4() },
     uFaceMinZ: { value: 0 },
+    // 臉部曲面 z = c0 + c1 x + c2 yc + c3 x² + c4 yc² + c5 x yc（yc = y − 1.56），用來只貼在臉上、不貼到臉前的帽兜
+    uFaceFitA: { value: new THREE.Vector3(...(cfg.face?.fit?.slice(0, 3) ?? [0, 0, 0])) },
+    uFaceFitB: { value: new THREE.Vector3(...(cfg.face?.fit?.slice(3, 6) ?? [0, 0, 0])) },
     uRibs: { value: cfg.ribs ?? 1 },
     uGauze: { value: cfg.gauze ?? 1 },
     uBackZ: { value: cfg.backZ ?? -0.15 },
@@ -121,6 +124,7 @@ varying vec3 vWNrm;
 uniform vec4 uFaceBox;
 uniform float uFacing, uCocoonShade;
 float faceZone = 0.0;
+uniform vec3 uFaceFitA, uFaceFitB;
 uniform float uLevel, uReveal, uGlow, uGlowMin, uGlowMax, uFaceOn, uFaceMinZ, uRibs, uGauze, uBackZ, uCrinkle, uBody, uUseMap;
 uniform sampler2D uFace;
 uniform vec4 uFaceRect;
@@ -179,10 +183,14 @@ if (edge < 0.0) discard;`,
           `#include <map_fragment>
 if (uFaceOn > 0.5) {
   vec2 fuv = (vWPos.xy - uFaceRect.xy) / (uFaceRect.zw - uFaceRect.xy);
-  if (fuv.x > 0.0 && fuv.x < 1.0 && fuv.y > 0.0 && fuv.y < 1.0 && vWPos.z > uFaceMinZ) {
+  float yc = vWPos.y - 1.56;
+  float zfit = uFaceFitA.x + uFaceFitA.y * vWPos.x + uFaceFitA.z * yc + uFaceFitB.x * vWPos.x * vWPos.x + uFaceFitB.y * yc * yc + uFaceFitB.z * vWPos.x * yc;
+  float onFace = 1.0 - smoothstep(0.012, 0.022, abs(vWPos.z - zfit)); // 只貼在臉的曲面上（帽兜翻片在臉前 2 cm 以上）
+  float front = smoothstep(-0.35, 0.2, normalize(vWNrm).z); // 朝前與朝下（鼻孔、下巴底）都貼，朝後的側面不貼以免拉長
+  if (fuv.x > 0.0 && fuv.x < 1.0 && fuv.y > 0.0 && fuv.y < 1.0 && vWPos.z > uFaceMinZ && onFace * front > 0.001) {
     vec4 f = texture2D(uFace, fuv);
     // AI 模型臉部的法線可能朝內，用絕對值判斷是否面向正前方
-    faceW = f.a; // 不看法線，避免下巴接縫露出白線
+    faceW = f.a * onFace * front; // 影片裡的臉（scripts/face-decal.py），只貼在臉的正面
     faceColor = f.rgb;
   }
 }

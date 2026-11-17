@@ -27,7 +27,13 @@ export const MODEL = {
     openPush: 0.05,
     faceBox: [0.075, 1.3, 1.72, 0.0], // 臉的範圍（公尺）：半寬、下緣、上緣、最小 z
     faceLight: 6, // 打在臉上的柔光（帽兜陰影裡的臉才不會灰暗）
-    face: null,
+    // 臉：用抓殼影片裡清楚的臉（第 6 格）投影到 3D 臉上，讓 3D 與影片是同一張臉（scripts/face-decal.py）
+    face: {
+      url: "./textures/face-video.png",
+      rect: [-0.04286, 0.81714, 0.04286, 0.96571], // 相對身高：x0, y0, x1, y1
+      minZ: 0,
+      fit: [0.074, 0.152, 0.225, -14.28, -1.947, -1.553],
+    },
     knot: null,
   },
 };
