@@ -5,6 +5,6 @@
   "type": "module",
   "scripts": {
     "dev": "node serve.mjs",
-    "check": "node --check dist/grip-seq.js && node --check dist/figure.js && node --check dist/stage.js && node --check dist/garment-glb.js && node --check dist/model-config.js && node --check dist/story.js && node --check dist/viewer.js && node --check serve.mjs"
+    "check": "node --check dist/grip-seq.js && node --check dist/stage.js && node --check dist/garment-glb.js && node --check dist/model-config.js && node --check dist/story.js && node --check dist/viewer.js && node --check serve.mjs"
   }
 }

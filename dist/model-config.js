@@ -2,7 +2,7 @@
 // 模型：Tripo 生成（models-raw/C-tripo.glb），由 scripts/process-model.py --tripo 處理：
 // 形狀、臉、皺褶完全保留，只把偏灰的白布提亮去污、做發光遮罩與 LED 位置。
 // 高度相關數值皆為「相對身高」的比例 0~1。
-// 舊的 TRELLIS 模型（emerge-a2.glb）已移到 models-raw/unused/，不再發布。
+// V1（TRELLIS）模型保存在本機 models/v1-trellis/，不再發布；目前為 V2（Tripo）。
 export const MODEL = {
   url: "./models/emerge-c.glb", // Draco 壓縮的完整網格,
   cfg: {
@@ -25,6 +25,5 @@ export const MODEL = {
     faceLight: 6, // 打在臉上的柔光（帽兜陰影裡的臉才不會灰暗）
     face: null,
     knot: null,
-    figure: null, // 不加程序化的頭與手：完全使用 Tripo 模型
   },
 };

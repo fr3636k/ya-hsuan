@@ -5,7 +5,6 @@
 import * as THREE from "three";
 import { GLTFLoader } from "./vendor/GLTFLoader.js";
 import { DRACOLoader } from "./vendor/DRACOLoader.js";
-import { createFigure } from "./figure.js";
 
 export const HEIGHT = 1.75;
 const clamp01 = (x) => Math.min(1, Math.max(0, x));
@@ -382,8 +381,6 @@ totalEmissiveRadiance += vec3(rim * 2.5) * step(uReveal, 0.999);`,
   group.add(new THREE.Points(dustGeo, dustMat));
 
   // 程序化的頭與雙臂（取代 AI 模型模糊的臉，並能做出抓住蛹的動作）
-  const figure = cfg.figure ? createFigure(cfg.figure) : null;
-  if (figure) group.add(figure.group);
 
   // 腰間束結：兩片前襟的末端從左上、右上下來，在腰前互相扭轉成結（照片 358/361/339）
   if (cfg.knot) {
@@ -420,7 +417,6 @@ totalEmissiveRadiance += vec3(rim * 2.5) * step(uReveal, 0.999);`,
   }
 
   const state = { silk: 1, reveal: 1, burst: 0.3, grip: 0 };
-  let lastGrip = -1;
   let lastSilk = -1,
     lastLvl = -1;
   function updateSilk(level) {
@@ -453,15 +449,8 @@ totalEmissiveRadiance += vec3(rim * 2.5) * step(uReveal, 0.999);`,
     update(time, level) {
       uniforms.uLevel.value = level;
       uniforms.uReveal.value = state.reveal;
-      if (figure) {
-        figure.group.visible = state.reveal > 0.55;
-        // 雙手抓住之後才開始撥開
-        uniforms.uOpen.value = THREE.MathUtils.smoothstep(state.grip, 0.75, 1.0);
-        if (Math.abs(lastGrip - state.grip) > 1e-4) {
-          figure.update(state.grip);
-          lastGrip = state.grip;
-        }
-      }
+      // 最後一章沒有影片時：開口兩側慢慢被撥開
+      uniforms.uOpen.value = THREE.MathUtils.smoothstep(state.grip, 0.35, 1.0);
       inner.intensity = 0.1 + level * 0.8;
       faceLight.intensity = (cfg.faceLight ?? 4) * state.reveal;
       dotMat.opacity = Math.min(1, 0.05 + level * 0.95);
