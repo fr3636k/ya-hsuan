@@ -1,0 +1,30 @@
+# 推上 main 後，把 dist/ 發布到 GitHub Pages（https://fr3636k.github.io/ya-hsuan/）
+# 發布紀錄名稱沿用提交訊息（符合 Conventional Commits），不使用 GitHub 預設的 pages build and deployment
+name: "build(deploy): 發布 dist 到 GitHub Pages"
+run-name: "${{ github.event.head_commit.message || 'build(deploy): 手動發布 dist 到 GitHub Pages' }}"
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+concurrency:
+  group: pages
+  cancel-in-progress: true
+jobs:
+  deploy:
+    name: 發布 dist
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+      - id: deployment
+        uses: actions/deploy-pages@v4
