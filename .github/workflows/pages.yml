@@ -1,7 +1,6 @@
 # 推上 main 後，把 dist/ 發布到 GitHub Pages（https://fr3636k.github.io/ya-hsuan/）
-# 發布紀錄名稱沿用提交訊息（符合 Conventional Commits），不使用 GitHub 預設的 pages build and deployment
+# 發布紀錄名稱：推送時 GitHub 會顯示該次提交訊息的第一行（符合 Conventional Commits）；手動執行時顯示下面的 name
 name: "build(deploy): 發布 dist 到 GitHub Pages"
-run-name: "${{ github.event.head_commit.message || 'build(deploy): 手動發布 dist 到 GitHub Pages' }}"
 on:
   push:
     branches: [main]
