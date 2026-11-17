@@ -33,9 +33,9 @@
 | 各章鏡頭、開場時間軸 | `dist/story.js` |
 | 燈光節奏 | `dist/stage.js` 的 `RHYTHM` |
 | 發光、燈籠、布面效果參數 | `dist/model-config.js` |
-| 模型處理（Tripo → 網頁用） | `scripts/process-model.py --tripo`、`scripts/draco-compress.py` |
+| 模型處理（V2 Tripo → 網頁用） | `scripts/process-model.py --tripo`、`scripts/draco-compress.py` |
 | 結尾影片換新 | `python scripts/grip-frames.py <影片.mp4> --sharp-eyes` |
 
 - 本機預覽：`node serve.mjs` → http://127.0.0.1:8788
 - 發布：推上 `main` 後由 GitHub Actions 自動發布 `dist/`。提交規範見 `AGENTS.md`（`<type>(<scope>): <中文說明>`）。
-- 參考照片、AI 原始檔、影片素材（`data/`、`models-raw/` 等）只留本機，不上傳。
+- 只留本機、不上傳：參考照片 `data/`、歷次 3D 模型 `models/`（V1 TRELLIS、V2 Tripo，見其中的 README）、影片素材 `video-src/`。

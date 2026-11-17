@@ -1,7 +1,10 @@
-"""把 AI 生成的 GLB 處理成網頁用的模型。
+"""把 AI 生成的 GLB 處理成網頁用的模型。兩個版本：
 
-用法（在專案資料夾）：
-  python scripts/process-model.py <輸入.glb> dist/models/<輸出名>.glb [--pink]
+V2（目前使用，Tripo）：形狀與臉保留原貌，只提亮白布、去污、做發光遮罩與 LED
+  python scripts/process-model.py models/v2-tripo/raw-tripo.glb <暫存>.glb --tripo
+  → Blender 執行 scripts/draco-compress.py <暫存>.glb dist/models/emerge-c.glb（Draco 壓縮）
+V1（舊版，TRELLIS）：另外雕塑骨架、蛹形、下擺（SCULPT 參數）
+  python scripts/process-model.py models/v1-trellis/raw-trellis2.glb models/v1-trellis/web-emerge-a2.glb [--pink]
 
 處理內容：
   1. 尺寸校正：身高 1.75 m、腳底 y=0、水平置中（直接寫進頂點）
@@ -31,6 +34,9 @@ GLOW_BAND = (0.53, 1.0)  # 發光的高度範圍（相對身高）
 LED_COUNT = 260
 
 
+# ===== 共用 =====
+
+
 def hsv(a):
     mx = a.max(2)
     mn = a.min(2)
@@ -55,6 +61,8 @@ def cv2_dilate(mask, r=2):
 def clamp01(x):
     return np.clip(x, 0, 1)
 
+
+# ===== V1（TRELLIS）：貼圖處理與雕塑 =====
 
 HEAD_Y = 0.8  # 相對身高：以上才可能有頭髮
 SKIRT_Y = 0.52  # 相對身高：以下是針織魚尾裙
@@ -420,6 +428,9 @@ def sculpt(mesh):
     # 收尾平滑：各步驟交界處（腰部）留下的小撕裂片
     for y0, y1, it in SCULPT.get("post_smooth_regions", []):
         smooth_region(mesh, y0, y1, it)
+
+
+# ===== V2（Tripo）：貼圖處理 =====
 
 
 def texel_xyz(mesh, size):

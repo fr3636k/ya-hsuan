@@ -5,7 +5,7 @@
 - 提交前執行 `npm run check`，並在本機預覽確認手機與桌機畫面。
 - 保留使用者未提交的修改，不擅自納入其他工作。
 - 公開網站由 GitHub Actions（`.github/workflows/pages.yml`）在推上 `main` 後發布 `dist/`；每次發布的名稱沿用該次提交訊息，不另做泛用提交。
-- `data/`、`ai-input/`、`models-raw/`、`qa/` 只留本機，不進版本庫。
+- `data/`、`models/`、`video-src/`、`qa/` 只留本機，不進版本庫。
 
 ## 提交類型
 
