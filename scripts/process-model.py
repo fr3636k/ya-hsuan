@@ -483,6 +483,59 @@ def face_lift(a, k=FACE_LIFT):
     return np.clip(mean + (lifted - mean) * 1.15, 0, 1)
 
 
+def blend_face_seams(out, xyz, region, voxel=0.003, ring=4):
+    """臉部貼圖接縫：兩個區塊在臉上的交界顏色接不起來（中線、脖子出現細線）。
+    找出區塊交界（相鄰像素的 3D 位置跳動 > 5 mm），交界附近 ring 像素改成「同一個 3D 位置（3 mm 體素）所有像素的平均色」，
+    交界兩側用同一個顏色 → 接縫消失。"""
+    P = np.nan_to_num(xyz, nan=1e3)
+    jump = np.zeros(P.shape[:2], bool)
+    for ax in (0, 1):
+        d = np.linalg.norm(np.diff(P, axis=ax), axis=-1) > 0.005
+        if ax == 0:
+            jump[:-1] |= d
+            jump[1:] |= d
+        else:
+            jump[:, :-1] |= d
+            jump[:, 1:] |= d
+    near = cv2_dilate(jump & region, ring) & region & ~np.isnan(xyz[..., 0])
+    sel = region & ~np.isnan(xyz[..., 0])
+    vk = np.floor(P[sel] / voxel).astype(np.int64)
+    _, inv = np.unique(vk, axis=0, return_inverse=True)
+    inv = inv.ravel()
+    cnt = np.bincount(inv).astype(np.float64)
+    avg = np.stack([np.bincount(inv, weights=out[sel][:, c]) for c in range(3)], 1) / cnt[:, None]
+    col = np.zeros_like(out)
+    col[sel] = avg[inv]
+    w = near.astype(np.float32)[..., None]
+    print("face seam texels blended", int(near.sum()))
+    return out * (1 - w) + col * w
+
+
+def smooth_face(mesh, iters=6, lam=0.5, mu=-0.53):
+    """V2：臉部網格平滑（Taubin，不縮小），只作用在臉與脖子，邊緣漸弱。
+    貼圖接縫上的重複頂點依位置合併後一起移動，避免裂開。"""
+    v = mesh.vertices.copy()
+    key = np.round(v / 1e-5).astype(np.int64)
+    _, uid, inv = np.unique(key, axis=0, return_index=True, return_inverse=True)
+    inv = inv.ravel()
+    P = v[uid].copy()
+    e = inv[mesh.edges_unique]
+    e = e[e[:, 0] != e[:, 1]]
+    x, y, z = P[:, 0], P[:, 1], P[:, 2]
+    w = (np.clip((0.085 - np.abs(x)) / 0.025, 0, 1) * np.clip((y - 1.35) / 0.05, 0, 1)
+         * np.clip((1.69 - y) / 0.03, 0, 1) * np.clip((z - 0.0) / 0.03, 0, 1))
+    deg = np.bincount(e.ravel(), minlength=len(P)).astype(np.float64)
+    for _ in range(iters):
+        for f in (lam, mu):
+            acc = np.zeros_like(P)
+            np.add.at(acc, e[:, 0], P[e[:, 1]])
+            np.add.at(acc, e[:, 1], P[e[:, 0]])
+            avg = acc / np.maximum(deg, 1)[:, None]
+            P = P + (f * w)[:, None] * (avg - P)
+    mesh.vertices = P[inv]
+    print("face smoothed vertices", int((w > 0).sum()))
+
+
 def process_texture_tripo(img, xyz):
     from PIL import ImageFilter
 
@@ -537,6 +590,24 @@ def process_texture_tripo(img, xyz):
         wc = np.asarray(Image.fromarray((cv2_dilate(wc, 1) * 255).astype(np.uint8)).filter(ImageFilter.GaussianBlur(1.2))).astype(np.float32) / 255
         shade = np.clip(0.85 + detail * 2.0, 0.6, 1.1)[..., None]
         a = a * (1 - wc[..., None]) + skin_col * shade * wc[..., None]
+    # 磨皮：保留輪廓的平滑（雙邊濾波），眼、眉、唇的邊緣保留，膚色的顆粒與斑駁抹平（貼近影片裡的臉）
+    import cv2
+    a8 = (np.clip(a, 0, 1) * 255).astype(np.uint8)
+    sm = cv2.bilateralFilter(a8, 9, 28, 6).astype(np.float32) / 255
+    sm = cv2.bilateralFilter((sm * 255).astype(np.uint8), 7, 22, 4).astype(np.float32) / 255
+    skin_soft = (keep & skinish & ~lips).astype(np.float32)
+    skin_soft = cv2.GaussianBlur(skin_soft, (0, 0), 1.2)[..., None] * 0.85
+    a = a * (1 - skin_soft) + sm * skin_soft
+    # 左右半臉來自不同貼圖區塊、亮度不一：以中線兩側 2 cm 的膚色比例，校正較暗那一半（越靠中線校正越完整）
+    strip = keep & skinish & (np.abs(X) < 0.02) & (Y > 1.45) & (Y < 1.62)
+    left, right = strip & (X < -0.003), strip & (X > 0.003)
+    if left.sum() > 50 and right.sum() > 50:
+        ml, mr = a[left].mean(0), a[right].mean(0)
+        side = np.where(X < 0, 1.0, 0.0)  # 左半臉
+        ratio_l = np.clip(mr / np.maximum(ml, 1e-3), 0.8, 1.25)  # 把左半調成右半的色
+        wgt = (keep & (np.abs(X) < 0.09)).astype(np.float32) * side
+        a = a * (1 + (ratio_l - 1) * wgt[..., None])
+        print("face side balance (L→R ratio)", np.round(ratio_l, 3))
     face = face_lift(a)  # 臉提亮（暗部拉起來、亮部不爆），保留原本五官與膚色
     w = kf[..., None]
     out = cleaned * (1 - w) + face * w
@@ -552,6 +623,7 @@ def process_texture_tripo(img, xyz):
     grown = pad_islands(out, facem.astype(np.float32), iters=7)
     out = np.where(band[..., None], grown, out)
     mask = np.where(cv2_dilate(facem, 3), 0.0, mask)  # 臉與周圍不發光、不套布料效果
+    out = blend_face_seams(out, xyz, cv2_dilate(facem, 6))
     color = Image.fromarray((np.clip(out, 0, 1) * 255).astype(np.uint8))
     emissive = Image.fromarray((np.repeat(mask[..., None], 3, 2) * 255).astype(np.uint8))
     print("face texels kept", int(keep.sum()))
@@ -575,6 +647,8 @@ def main():
     # 1b. 比例雕塑：依照片比對調整（數值在 SCULPT）
     if not tripo:
         sculpt(mesh)
+    else:
+        smooth_face(mesh)
 
     # 2~4. 貼圖與材質
     mat = mesh.visual.material
@@ -621,9 +695,14 @@ def main():
     # 頂點法線：自己用 numpy 算（trimesh 在沒有 scipy 時會非常慢）
     fn = np.cross(mesh.vertices[mesh.faces[:, 1]] - mesh.vertices[mesh.faces[:, 0]],
                   mesh.vertices[mesh.faces[:, 2]] - mesh.vertices[mesh.faces[:, 0]])
-    vn = np.zeros_like(mesh.vertices)
+    # 貼圖接縫上的重複頂點（同位置、不同 UV）依位置合併後一起算 → 接縫兩邊打光連續，不會出現一條線
+    key = np.round(mesh.vertices / 1e-5).astype(np.int64)
+    _, inv = np.unique(key, axis=0, return_inverse=True)
+    inv = inv.ravel()
+    acc = np.zeros((inv.max() + 1, 3))
     for c in range(3):
-        np.add.at(vn, mesh.faces[:, c], fn)
+        np.add.at(acc, inv[mesh.faces[:, c]], fn)
+    vn = acc[inv]
     vn /= np.maximum(np.linalg.norm(vn, axis=1, keepdims=True), 1e-12)
     mesh.vertex_normals = vn
     mesh.export(dst, include_normals=True)
