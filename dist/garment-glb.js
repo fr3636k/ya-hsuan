@@ -5,6 +5,7 @@
 import * as THREE from "three";
 import { GLTFLoader } from "./vendor/GLTFLoader.js";
 import { DRACOLoader } from "./vendor/DRACOLoader.js";
+import { MeshoptDecoder } from "./vendor/meshopt_decoder.module.js";
 
 export const HEIGHT = 1.75;
 const clamp01 = (x) => Math.min(1, Math.max(0, x));
@@ -26,20 +27,26 @@ function radialSprite(stops) {
 }
 const additive = (map, extra = {}) => ({ map, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, ...extra });
 
-// 模型用 Draco 壓縮（完整網格、不減面），解碼器放在 vendor/draco
+// 完整模型用 Draco 壓縮（解碼器在 vendor/draco）；預覽模型用 meshopt 壓縮（解碼快、不需背景執行緒）
 function gltfLoader() {
   const draco = new DRACOLoader().setDecoderPath(new URL("./vendor/draco/", import.meta.url).href);
-  return new GLTFLoader().setDRACOLoader(draco);
+  return new GLTFLoader().setDRACOLoader(draco).setMeshoptDecoder(MeshoptDecoder);
 }
 
+// 兩段式載入：先載入很小的預覽模型（cfg.preview，約 170 KB）讓畫面立刻出現，
+// 完整模型（url）在背景下載，好了之後原地換上網格與貼圖（材質與特效沿用，畫面品質與原本相同）
 export async function loadGarment(url, cfg = {}, onProgress) {
   cfg = { glowMin: 0.53, glowMax: 1.0, glowCenter: [0, 0.76, -0.02], glowStrength: 0.42, ...cfg };
+  const loader = gltfLoader();
+  const firstUrl = cfg.preview ?? url;
   const [gltf, leds, faceTex] = await Promise.all([
-    gltfLoader().loadAsync(url, (e) => onProgress && e.total && onProgress(e.loaded / e.total)),
-    fetch(url.replace(/\.glb$/, ".leds.json")).then((r) => (r.ok ? r.json() : [])),
+    loader.loadAsync(firstUrl, (e) => onProgress && e.total && onProgress(e.loaded / e.total)),
+    fetch(cfg.leds ?? url.replace(/\.glb$/, ".leds.json")).then((r) => (r.ok ? r.json() : [])),
     cfg.face ? new THREE.TextureLoader().loadAsync(cfg.face.url) : null,
   ]);
   const model = gltf.scene;
+  // 預覽已出現 → 才開始下載完整模型（不跟預覽搶頻寬）
+  const fullPromise = cfg.preview ? loader.loadAsync(url) : null;
   const group = new THREE.Group();
   group.add(model);
 
@@ -439,9 +446,40 @@ totalEmissiveRadiance += vec3(rim * 2.5) * step(uReveal, 0.999);`,
     silk.visible = state.silk < 0.999;
   }
 
+  // 完整模型下載好：把預覽網格換成完整網格，貼圖換成完整解析度（含法線貼圖），材質（含所有特效）沿用
+  const upgraded = fullPromise
+    ? fullPromise
+        .then((full) => {
+          const src = [];
+          full.scene.traverse((o) => o.isMesh && src.push(o));
+          const dst = [];
+          model.traverse((o) => o.isMesh && dst.push(o));
+          dst.forEach((pm, i) => {
+            const fm = src[i];
+            if (!fm) return;
+            const mat = pm.material;
+            for (const k of ["map", "emissiveMap", "normalMap"]) mat[k] = fm.material[k] ?? null;
+            if (mat.map) mat.map.anisotropy = 8;
+            if (mat.normalMap && cfg.normalScale !== undefined) mat.normalScale.setScalar(cfg.normalScale);
+            mat.needsUpdate = true;
+            fm.material = mat;
+            fm.updateWorldMatrix(true, false);
+            pm.removeFromParent();
+            pm.geometry.dispose();
+            // 完整網格直接放在模型根節點下，套用它在完整模型裡的座標（預覽模型的節點帶有量化縮放，不能沿用）
+            fm.removeFromParent();
+            fm.matrixWorld.decompose(fm.position, fm.quaternion, fm.scale);
+            model.add(fm);
+          });
+          return true;
+        })
+        .catch((e) => (console.warn("full model", e), false))
+    : Promise.resolve(true);
+
   return {
     group,
     model,
+    upgraded,
     state,
     set(next) {
       Object.assign(state, next);

@@ -85,6 +85,9 @@ ui.done();
 // → 內光越來越亮 → 閃一下 → 外面的燈慢慢亮起，她的臉與全身出現 → 進入 亮/暗/閃 循環
 const INTRO = reduceMotion || forced !== null ? 0 : 6;
 const introFixed = new URLSearchParams(location.search).get("intro"); // 截圖檢查用：固定開場進度 0~1
+let introT = 0,
+  fullReady = false;
+garment.upgraded.then(() => ((fullReady = true), (document.body.dataset.full = "1")));
 const sm = (a, b, v) => {
   const k = Math.max(0, Math.min(1, (v - a) / (b - a)));
   return k * k * (3 - 2 * k);
@@ -97,14 +100,18 @@ const envBase = scene.environmentIntensity;
 const sprites = [];
 garment.group.traverse((o) => o.isSprite && sprites.push(o));
 
-// AI 生成的抓殼畫格：背景載入，不擋住 3D
-let gripSeq = null;
-loadGripSeq(document.querySelector(".grip-seq"))
-  .then(async (g) => {
-    await g.ready;
-    gripSeq = g;
-  })
-  .catch((e) => console.warn("grip frames", e));
+// AI 生成的抓殼畫格：快滑到最後一章時才開始下載（不跟開場的模型搶頻寬）
+let gripSeq = null,
+  gripRequested = false;
+function requestGrip() {
+  gripRequested = true;
+  loadGripSeq(document.querySelector(".grip-seq"))
+    .then(async (g) => {
+      await g.ready;
+      gripSeq = g;
+    })
+    .catch((e) => console.warn("grip frames", e));
+}
 
 const look = new THREE.Vector3();
 const clock = new THREE.Clock();
@@ -125,6 +132,7 @@ function frame() {
   const dt = Math.min(clock.getDelta(), 0.1);
   const time = clock.elapsedTime;
   const fi = forced !== null ? forced : scrollIndex();
+  if (!gripRequested && fi > keys.length - 3) requestGrip();
   const goal = target(fi);
   const k = reduceMotion || forced !== null ? 1 : 1 - Math.pow(0.003, dt);
   for (const f of NUM) cur[f] += (goal[f] - cur[f]) * k;
@@ -138,7 +146,12 @@ function frame() {
   if (gripFixed !== null) grip = +gripFixed;
   const gripEased = grip * grip * (3 - 2 * grip);
   // 開場時間軸
-  const ip = introFixed !== null ? +introFixed : INTRO ? Math.min(1, time / INTRO) : 1;
+  // 完整模型還沒到：停在「蛹裡的光呼吸」（ip ≤ 0.42），到了才閃一下、亮燈 → 亮燈時一定是完整品質（最多等 12 秒）
+  if (INTRO && introFixed === null) {
+    const hold = !fullReady && time < 12;
+    introT = Math.min(hold ? Math.max(introT, Math.min(introT + dt, 0.42 * INTRO)) : introT + dt, INTRO);
+  }
+  const ip = introFixed !== null ? +introFixed : INTRO ? introT / INTRO : 1;
   garment.set({ silk: cur.silk, reveal: cur.reveal, burst: cur.burst, grip: gripSeq ? 0 : gripEased }); // 有影片時 3D 不自己撥開
   const rh = rhythmAt(time);
   const phase = rh.phase;

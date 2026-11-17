@@ -5,6 +5,11 @@
     <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
     <meta name="theme-color" content="#000000" />
     <title>破蛹 EMERGE</title>
+    <!-- 預先下載：程式與預覽模型同時開始，不用等程式解析完才發出請求 -->
+    <link rel="modulepreload" href="./vendor/three.module.js" />
+    <link rel="modulepreload" href="./story.js" />
+    <link rel="modulepreload" href="./garment-glb.js" />
+    <link rel="preload" href="./models/emerge-c-preview.glb" as="fetch" crossorigin="anonymous" />
     <meta name="description" content="凱達格蘭族母系社會為靈感的光繭服裝。白光以亮、暗、閃的節奏呼吸，往下滑看她破蛹而出。" />
     <link rel="stylesheet" href="./style.css" />
     <script type="importmap">

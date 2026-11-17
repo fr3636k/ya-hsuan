@@ -34,6 +34,7 @@
 | 燈光節奏 | `dist/stage.js` 的 `RHYTHM` |
 | 發光、燈籠、布面效果參數 | `dist/model-config.js` |
 | 模型處理（V2 Tripo → 網頁用） | `scripts/process-model.py --tripo`、`scripts/draco-compress.py` |
+| 快速載入用的預覽模型 | Blender `scripts/make-preview-src.py` → `npx gltfpack -i 輸入 -o dist/models/emerge-c-preview.glb -cc -si 0.015 -sa` |
 | 結尾影片換新 | `python scripts/grip-frames.py <影片.mp4> --sharp-eyes` |
 
 - 本機預覽：`node serve.mjs` → http://127.0.0.1:8788

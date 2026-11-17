@@ -1,11 +1,15 @@
 // 目前使用的模型與調整參數（換模型時只改這裡）
-// 模型：Tripo 生成（models-raw/C-tripo.glb），由 scripts/process-model.py --tripo 處理：
+// 模型：V2 Tripo（models/v2-tripo/raw-tripo.glb），由 scripts/process-model.py --tripo 處理：
 // 形狀、臉、皺褶完全保留，只把偏灰的白布提亮去污、做發光遮罩與 LED 位置。
 // 高度相關數值皆為「相對身高」的比例 0~1。
 // V1（TRELLIS）模型保存在本機 models/v1-trellis/，不再發布；目前為 V2（Tripo）。
+// 載入：先顯示預覽模型（emerge-c-preview.glb，約 170 KB：網格 1.5%、貼圖 256），
+// 完整模型（emerge-c.glb，約 6 MB）在背景下載後原地換上 → 畫面約 1～2 秒出現，最終品質不變
 export const MODEL = {
-  url: "./models/emerge-c.glb", // Draco 壓縮的完整網格,
+  url: "./models/emerge-c.glb",
   cfg: {
+    preview: "./models/emerge-c-preview.glb",
+    leds: "./models/emerge-c.leds.json", // LED 光點位置
     glowMin: 0.58, // 蛹的發光範圍：從腰
     glowMax: 1.0, //            到頂
     glowStrength: 0.6, // 白光最亮時的布面發光強度
