@@ -5,6 +5,12 @@
     <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
     <meta name="theme-color" content="#000000" />
     <title>破蛹 EMERGE</title>
+    <!-- 重新整理時一律回到最上方（不讓瀏覽器還原上次的捲動位置），開場才會從頭播 -->
+    <script>
+      if ("scrollRestoration" in history) history.scrollRestoration = "manual";
+      window.scrollTo(0, 0);
+      addEventListener("pageshow", () => window.scrollTo(0, 0));
+    </script>
     <!-- 預先下載：程式與預覽模型同時開始，不用等程式解析完才發出請求 -->
     <link rel="modulepreload" href="./vendor/three.module.js" />
     <link rel="modulepreload" href="./story.js" />
