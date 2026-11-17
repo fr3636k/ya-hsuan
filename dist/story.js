@@ -84,7 +84,7 @@ ui.done();
 
 // 開場「破蛹」時間軸（秒）：全場暗，只有蛹裡的光像呼吸一樣透出（看得到燈籠骨架）
 // → 內光越來越亮 → 閃一下 → 外面的燈慢慢亮起，她的臉與全身出現 → 進入 亮/暗/閃 循環
-const INTRO = reduceMotion || forced !== null ? 0 : 6;
+const INTRO = reduceMotion || forced !== null ? 0 : 3; // 開場 3 秒
 const introFixed = new URLSearchParams(location.search).get("intro"); // 截圖檢查用：固定開場進度 0~1
 // 開場鎖定：滾輪、觸控滑動、方向鍵／空白鍵都先擋住，開場跑完才放開
 // 鎖定狀態只看 <html> 的 intro-lock（index.html 的保險移除它時，這裡也跟著放開）
@@ -165,15 +165,15 @@ function frame() {
   if (gripFixed !== null) grip = +gripFixed;
   const gripEased = grip * grip * (3 - 2 * grip);
   // 開場時間軸
-  // 完整模型還沒到：停在「蛹裡的光呼吸」（ip ≤ 0.42），到了才閃一下、亮燈（最多等 8 秒）
+  // 完整模型還沒到：停在「蛹裡的光呼吸」（ip ≤ 0.42），到了才閃一下、亮燈（開場最慢約 3 秒）
   if (INTRO && introFixed === null) {
-    const hold = !fullReady && time < 8; // 最多等 8 秒：網路很慢時不讓人卡在開場太久（之後完整模型到了仍會自動換上）
+    const hold = !fullReady && time < 1.3; // 最多等到 1.3 秒（開場最慢約 3 秒結束；完整模型之後到了仍會自動換上）
     const idt = Math.min(rawDt, 0.5); // 開場用真實經過時間（畫面卡頓時也準時）
     introT = Math.min(hold ? Math.max(introT, Math.min(introT + idt, 0.42 * INTRO)) : introT + idt, INTRO);
   }
   const ip = introFixed !== null ? +introFixed : INTRO ? introT / INTRO : 1;
   // 開場跑完（燈全亮）才能往下滑，並淡入「向下滑動」
-  if (isLocked() && (ip >= 0.95 || forced !== null)) unlockIntro();
+  if (isLocked() && (time >= 2 || ip >= 0.95 || forced !== null)) unlockIntro(); // 開場鎖 2 秒
   garment.set({ silk: cur.silk, reveal: cur.reveal, burst: cur.burst, grip: gripSeq ? 0 : gripEased }); // 有影片時 3D 不自己撥開
   const rh = rhythmAt(time);
   const phase = rh.phase;
