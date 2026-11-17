@@ -11,6 +11,7 @@
 - 多段影片會依序接起來（第二段用第一段最後一格當起始畫面生成）。
 - 影片若不是 9:16，會先縮放到與起始畫面等寬、再置中裁切，與 Wan 的處理方式相同。
 - --sharp-eyes：眼神銳利化（逐格找臉 → 眼睛一帶加銳利與對比）。
+- --no-chin-line：修掉下巴那條白色細線（帽兜細邊）。
 需要：pip install opencv-python numpy
 """
 import json
@@ -42,6 +43,46 @@ def face_box(img):
     return x, y, w, min(h, int(w * 1.35))
 
 
+def skin_mask(img):
+    hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+    sk = ((hsv[..., 0] < 22) | (hsv[..., 0] > 170)) & (hsv[..., 1] > 40) & (hsv[..., 2] > 70)
+    return cv2.morphologyEx(sk.astype(np.uint8) * 255, cv2.MORPH_CLOSE, np.ones((7, 7), np.uint8))
+
+
+def remove_chin_line(img, debug=False):
+    """下巴那條白色細線（帽兜細邊，沿著臉頰繞到下巴）：在下巴（嘴唇以下）與臉頰外緣找比周圍亮的細線（top-hat），用修補補掉。
+    鼻子、臉頰中央的高光不在搜尋範圍內，不會被誤補。"""
+    b = face_box(img)
+    if b is None:
+        return img
+    x, y, w, h = b
+    g = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    sat = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)[..., 1]
+    top = cv2.morphologyEx(g, cv2.MORPH_TOPHAT, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (11, 11)))
+    m = (top > 25) & (g > 115) & (sat < 120)  # 比周圍亮的細線（米白色也算；紅唇飽和度高不算）
+    H, W = img.shape[:2]
+    reg = np.zeros_like(m)
+    # 下巴：下唇高光以下（從臉框 86% 起）
+    reg[min(H, y + int(h * 0.86)):min(H, y + int(h * 1.2)), max(0, x - int(w * 0.1)):min(W, x + w + int(w * 0.1))] = True
+    # 臉頰兩側：只取外緣，避開鼻子
+    ys, ye = min(H, y + int(h * 0.45)), min(H, y + int(h * 0.85))
+    reg[ys:ye, max(0, x - int(w * 0.15)):min(W, x + int(w * 0.22))] = True
+    reg[ys:ye, max(0, x + int(w * 0.78)):min(W, x + w + int(w * 0.15))] = True
+    m = (m & reg).astype(np.uint8) * 255
+    # 只留「細長的線」：外框夠長、填滿比例低（弧線）；實心的亮塊（下唇下方的高光、帽兜一角）不動
+    n, lab, st, _ = cv2.connectedComponentsWithStats(m)
+    keep = np.zeros_like(m)
+    for i in range(1, n):
+        bw, bh, area = st[i, 2], st[i, 3], st[i, 4]
+        if max(bw, bh) >= max(10, w * 0.15) and area / float(bw * bh) < 0.45:
+            keep[lab == i] = 255
+    m = keep
+    m = cv2.dilate(m, np.ones((3, 3), np.uint8))
+    if debug:
+        return m
+    return cv2.inpaint(img, m, 4, cv2.INPAINT_TELEA)
+
+
 def sharpen_eyes(img):
     b = face_box(img)
     if b is None:
@@ -61,21 +102,6 @@ def sharpen_eyes(img):
     yy, xx = np.mgrid[0:hh, 0:ww]
     m = np.clip(1.3 - np.sqrt(((xx - ww / 2) / (ww * 0.5)) ** 2 + ((yy - hh / 2) / (hh * 0.55)) ** 2), 0, 1)[..., None]
     res = roi * (1 - m) + sharp * m
-    # 眼神光：左右半邊各找最暗的點（瞳孔），在左上方加一個柔和的白色反光點 → 眼睛有神
-    g = cv2.GaussianBlur(res.mean(2), (0, 0), max(1.5, w * 0.035))  # 模糊到睫毛線消失、只剩圓形瞳孔
-    r = max(1.2, w * 0.022)
-    # 只在兩眼中央一帶找（避開頭髮、眼角眼影）
-    for half in (slice(4 + int(w * 0.22), 4 + int(w * 0.45)), slice(4 + int(w * 0.55), 4 + int(w * 0.78))):
-        sub = g[:, half].copy()
-        sub[: int(hh * 0.25)] = 255
-        sub[int(hh * 0.8):] = 255
-        py, px = np.unravel_index(np.argmin(sub), sub.shape)
-        if sub[py, px] > 95:  # 找不到夠暗的瞳孔（閉眼、被擋住）就不加
-            continue
-        px += half.start
-        cy, cx = py - r * 0.55, px - r * 0.45
-        d = np.exp(-(((xx - cx) ** 2 + (yy - cy) ** 2) / (2 * (r * 0.55) ** 2)))[..., None]
-        res = res * (1 - d * 0.85) + 245 * d * 0.85
     out = img.copy()
     out[y0:y1, x0:x1] = np.clip(res, 0, 255).astype(np.uint8)
     return out
@@ -91,6 +117,7 @@ def main():
     if "--fps" in argv:
         del argv[argv.index("--fps"):argv.index("--fps") + 2]
     eyes = "--sharp-eyes" in argv
+    chin = "--no-chin-line" in argv
     args = [a for a in argv if not a.startswith("--")]
     fps = int(sys.argv[sys.argv.index("--fps") + 1]) if "--fps" in sys.argv else 16
     if not args:
@@ -130,6 +157,8 @@ def main():
                         mix = mix * (1 - dim)
                         cv2.imwrite(str(OUT / f"{n:03d}.jpg"), np.clip(mix, 0, 255).astype(np.uint8), [cv2.IMWRITE_JPEG_QUALITY, 84])
                         n += 1
+                if chin:
+                    fr = remove_chin_line(fr)
                 if eyes:
                     fr = sharpen_eyes(fr)
                 cut_pending, last = False, fr

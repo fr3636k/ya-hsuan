@@ -414,6 +414,18 @@ html.intro-lock .scroll-hint {
   .hero .copy {
     bottom: 15vh;
   }
+  /* 結尾文字放到最下方，不壓在她的臉和手上 */
+  .finale .copy {
+    bottom: calc(18px + env(safe-area-inset-bottom));
+  }
+  .finale .copy h2 {
+    font-size: 17px;
+    margin-bottom: 4px;
+  }
+  .finale .copy p {
+    font-size: 11.5px;
+    line-height: 1.6;
+  }
   .light-tag {
     left: var(--gutter);
     right: auto;

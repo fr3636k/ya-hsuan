@@ -191,6 +191,8 @@ function frame() {
   if (gripSeq) {
     const vo = Math.min(1, grip / 0.08);
     gripSeq.draw(grip, vo, time);
+    // 影片開始動之後，3D 畫面淡掉：影片裡她往前傾、輪廓和 3D 不同，兩側不能再透出 3D 的蛹（灰色殘影）
+    renderer.domElement.style.opacity = String(1 - Math.min(1, Math.max(0, (grip - 0.06) / 0.1)));
     // 影片播放時，3D 的背景光暈淡掉（影片是純黑底，兩邊才不會出現亮帶）
     for (const sp of sprites) sp.material.opacity *= 1 - vo; // garment.update 每格都會重設，這裡乘上去即可
   }
