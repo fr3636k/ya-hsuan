@@ -54,6 +54,22 @@ body.ready #stage {
   pointer-events: none;
   opacity: 0;
 }
+/* 檢視頁：完整模型換上前的小提示 */
+.detail-tip {
+  position: fixed;
+  left: 50%;
+  bottom: calc(24px + env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  z-index: 20;
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  color: var(--muted);
+  transition: opacity 0.6s ease;
+  pointer-events: none;
+}
+.detail-tip.hide {
+  opacity: 0;
+}
 .veil {
   position: fixed;
   inset: 0;
@@ -201,10 +217,9 @@ main {
   color: var(--muted);
   margin-bottom: 8px;
 }
-/* 偶數章節文字放右側，讓模型留在中間 */
-.chapter:nth-of-type(odd):not(.hero):not(.finale) .copy {
-  margin-left: auto;
-  text-align: right;
+/* 文字一律靠左、模型偏右（story.js 用 setViewOffset 把模型往右移）；文字靠陰影維持可讀性，不加底色 */
+.copy {
+  text-shadow: 0 1px 14px rgba(0, 0, 0, 0.9), 0 0 3px rgba(0, 0, 0, 0.8);
 }
 
 /* 開場 */
@@ -297,9 +312,6 @@ body.ready .hero .copy {
   display: flex;
   gap: 18px;
 }
-.chapter:nth-of-type(odd) .rhythm {
-  justify-content: flex-end;
-}
 .rhythm li {
   display: flex;
   flex-direction: column;
@@ -362,8 +374,7 @@ body.ready .hero .copy {
 
 /* ---------- 手機 ---------- */
 @media (max-width: 720px) {
-  .copy,
-  .chapter:nth-of-type(odd):not(.hero):not(.finale) .copy {
+  .copy {
     top: auto;
     position: sticky;
     bottom: calc(64px + env(safe-area-inset-bottom));
@@ -371,7 +382,7 @@ body.ready .hero .copy {
     margin-left: 0;
     padding: 0;
     text-align: left;
-    max-width: 100%;
+    max-width: 64%;
   }
   .chapter:not(.hero):not(.finale) {
     display: flex;
@@ -379,16 +390,6 @@ body.ready .hero .copy {
     justify-content: flex-end;
     padding-top: 0;
     padding-bottom: calc(64px + env(safe-area-inset-bottom));
-  }
-  .chapter:not(.hero):not(.finale) .copy::before {
-    content: "";
-    position: absolute;
-    inset: -40px calc(-1 * var(--gutter)) -80px;
-    background: linear-gradient(transparent, rgba(0, 0, 0, 0.82) 45%);
-    z-index: -1;
-  }
-  .chapter:nth-of-type(odd) .rhythm {
-    justify-content: flex-start;
   }
   .copy h2 {
     font-size: 19px;

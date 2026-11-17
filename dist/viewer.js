@@ -149,6 +149,18 @@ if (qs.has("plain")) garment.group.traverse((o) => o.isMesh && o.material.map &&
 if (qs.has("unlit")) garment.group.traverse((o) => o.isMesh && o.material.map && (o.material = new THREE.MeshBasicMaterial({ map: o.material.map, side: THREE.DoubleSide })));
 if (qs.has("nofx")) garment.group.traverse((o) => (o.isPoints || o.isLineSegments || o.isSprite) && (o.visible = false, o.layers.set(31)));
 ui.done();
+// 預覽模型先出現；完整模型換上前顯示小提示
+{
+  const tip = document.createElement("div");
+  tip.className = "detail-tip";
+  tip.textContent = "細節載入中…";
+  document.body.append(tip);
+  garment.upgraded.then(() => {
+    tip.classList.add("hide");
+    document.body.dataset.full = "1";
+    setTimeout(() => tip.remove(), 800);
+  });
+}
 
 const tagSteps = [...document.querySelectorAll(".lt-step")];
 const clock = new THREE.Clock();

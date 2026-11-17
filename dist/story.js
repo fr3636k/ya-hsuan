@@ -184,6 +184,14 @@ function frame() {
     look.z + Math.cos(az) * Math.cos(el) * dist,
   );
   camera.lookAt(look);
+  // 模型偏右（文字在左）；最後一章回到正中央，與抓殼影片對齊
+  {
+    const cw = renderer.domElement.clientWidth || innerWidth,
+      ch = renderer.domElement.clientHeight || innerHeight;
+    const shift = (cw / ch < 0.75 ? 0.14 : 0.12) * (1 - endW);
+    if (shift > 0.001) camera.setViewOffset(cw, ch, -cw * shift, 0, cw, ch);
+    else camera.clearViewOffset();
+  }
   renderer.render(scene, camera);
 
   const max = document.documentElement.scrollHeight - innerHeight;

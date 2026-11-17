@@ -53,9 +53,11 @@ export function createStage(canvas, { mobile = false } = {}) {
 }
 
 /** 依視窗調整：直式手機視野放寬 */
+// 用畫布實際顯示的大小（CSS 是 100lvh）：手機網址列收起時 innerHeight 會變，但畫布不變，用 innerHeight 會把模型拉寬
 export function fitCamera(renderer, camera) {
-  const w = innerWidth,
-    h = innerHeight;
+  const c = renderer.domElement;
+  const w = c.clientWidth || innerWidth,
+    h = c.clientHeight || innerHeight;
   renderer.setSize(w, h, false);
   camera.aspect = w / h;
   camera.fov = w / h < 0.75 ? 40 : 30;
