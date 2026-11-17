@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+    <meta name="theme-color" content="#000000" />
+    <title>破蛹 3D 檢視</title>
+    <meta name="description" content="自由旋轉、放大細節、調整白光節奏，檢查服裝 3D 模型。" />
+    <link rel="stylesheet" href="./style.css" />
+    <script type="importmap">
+      { "imports": { "three": "./vendor/three.module.js" } }
+    </script>
+  </head>
+  <body class="viewer">
+    <canvas id="stage" aria-label="可旋轉的服裝 3D 模型"></canvas>
+    <div class="loading" role="status"><span>載入 3D 模型</span><b><i></i></b></div>
+
+    <header class="nav">
+      <span class="nav-name">破蛹 <em>3D 檢視</em></span>
+      <a class="nav-btn" href="./">返回展示</a>
+    </header>
+
+    <div class="light-tag">
+      <span class="lt-label">LIGHT</span>
+      <span class="lt-step" data-phase="0">亮</span>
+      <span class="lt-step" data-phase="1">暗</span>
+      <span class="lt-step" data-phase="2">閃</span>
+    </div>
+
+    <aside class="panel" id="panel">
+      <button class="panel-toggle" id="panelToggle" aria-expanded="false" aria-controls="panel">調整模型</button>
+
+      <div class="group">
+        <h3>視角</h3>
+        <div class="seg" id="views">
+          <button data-view="front" aria-pressed="true">全身</button>
+          <button data-view="side">側面</button>
+          <button data-view="back">背面</button>
+          <button data-view="face">臉</button>
+          <button data-view="knot">前襟</button>
+          <button data-view="fabric">布面</button>
+          <button data-view="tail">魚尾</button>
+        </div>
+        <label class="check"><input type="checkbox" id="spin" checked /> 自動旋轉</label>
+      </div>
+
+      <div class="group">
+        <h3>破蛹</h3>
+        <label class="row">抓住蛹<input type="range" id="grip" min="0" max="1" step="0.01" value="0" /><output for="grip"></output></label>
+        <label class="row">顯現<input type="range" id="reveal" min="0" max="1" step="0.01" value="1" /><output for="reveal"></output></label>
+        <label class="row">絲線外繭<input type="range" id="silk" min="0" max="1" step="0.01" value="0" /><output for="silk"></output></label>
+      </div>
+
+      <div class="group">
+        <h3>白光</h3>
+        <div class="seg" id="lightMode">
+          <button data-mode="rhythm" aria-pressed="true">亮・暗・閃</button>
+          <button data-mode="on">常亮</button>
+          <button data-mode="off">關閉</button>
+        </div>
+        <label class="row">節奏速度<input type="range" id="speed" min="0.25" max="2" step="0.05" value="1" /><output for="speed"></output></label>
+      </div>
+
+      <div class="group" id="refGroup" hidden>
+        <h3>對照照片（僅本機）</h3>
+        <div class="refs" id="refs"></div>
+        <p class="note">點照片放大，與模型並排比對。發布到網路時不會包含這些照片。</p>
+      </div>
+    </aside>
+    <img class="ref-big" id="refBig" alt="參考照片放大" />
+
+    <script type="module" src="./viewer.js"></script>
+  </body>
+</html>
