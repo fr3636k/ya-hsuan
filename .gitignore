@@ -6,7 +6,8 @@ tmp/
 
 # 模特兒參考照片：只供本機比對，不進版本庫
 /data/
-/models/  # 歷次模型（根目錄），不是 dist/models
+# 歷次 3D 模型（根目錄的 models/，不是 dist/models）
+/models/
 /video-src/
 
 __pycache__/
