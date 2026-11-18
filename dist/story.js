@@ -115,7 +115,7 @@ addEventListener("wheel", markActivity, { passive: true });
 addEventListener("touchmove", markActivity, { passive: true });
 addEventListener("keydown", markActivity);
 const HOLD_MS = 1600; // 停留時間
-const DRIFT_PX = 30; // 停留期間內容緩慢上移的距離（看起來還在滑，只是很慢）
+const DRIFT_PX = 10; // 停留期間內容緩慢上移的距離（微微往上，看起來還在滑）
 function pull(px) {
   mainEl.style.transform = px ? `translateY(${-px}px)` : "";
 }
@@ -131,7 +131,7 @@ function startHold(sec) {
 function holdFrame(now) {
   const k = Math.min(1, (now - hold.start) / HOLD_MS);
   const drift = DRIFT_PX * (k * k * (3 - 2 * k));
-  const elastic = 22 * Math.tanh(hold.pending / 260);
+  const elastic = 8 * Math.tanh(hold.pending / 260);
   hold.offset = drift + elastic;
   pull(hold.offset);
 }
@@ -294,7 +294,7 @@ function frame() {
   let level = rh.level + (1 - rh.level) * endW; // 最後定點：燈穩定全亮，與影片一致
   // 開場：蛹裡的光呼吸、漸強 → 閃一下 → 交回正常節奏
   const breath = (0.18 + 0.85 * sm(0.03, 0.42, ip)) * (0.78 + 0.22 * Math.sin(time * 2.6));
-  const burstFlash = Math.exp(-Math.pow((ip - 0.47) / 0.045, 2)) * 1.6;
+  const burstFlash = Math.exp(-Math.pow((ip - 0.47) / 0.06, 2)) * 1.3; // 閃光柔一點、峰值低一點
   const handBack = sm(0.52, 0.9, ip);
   if (ip < 1) level = Math.max(breath, burstFlash) * (1 - handBack) + level * handBack;
   garment.update(time, level);
@@ -345,7 +345,7 @@ function frame() {
     lastPhase = phase;
   }
   const rhythmFlash = phase === 2 ? Math.min(1, Math.max(0, level - 0.6)) * (1 - endW) : 0;
-  document.body.style.setProperty("--flash", Math.max(rhythmFlash * handBack, burstFlash * 0.45));
+  document.body.style.setProperty("--flash", Math.max(rhythmFlash * handBack, burstFlash * 0.22));
   requestAnimationFrame(frame);
 }
 requestAnimationFrame(frame);
