@@ -15,7 +15,7 @@ const ui = loaderUI();
 // grip（雙手抓住蛹）不跟著滑動：只有滑到最後看全身時，才隨時間慢慢抓住
 const KEYS = {
   // 開場不再用絲線包住：光芒綻放、她在光中顯現（顯現由下方的開場時間軸控制）
-  hero: { az: 0, el: 4, dist: 5.6, t: [0, 0.5, 0], silk: 1, reveal: 1, burst: 0.4 },
+  hero: { az: 0, el: 4, dist: 4.3, t: [0, 0.52, 0], silk: 1, reveal: 1, burst: 0.4 }, // 開場模特兒放大（原 5.6）
   emerge: { az: 20, el: 3, dist: 5.0, t: [0, 0.5, 0], silk: 1, reveal: 1, burst: 1 },
   face: { az: 12, el: 3, dist: 1.25, t: [0, 0.85, 0.02], silk: 1, reveal: 1, burst: 0.4 }, // Tripo 臉在 y≈1.56 m（0.89）
   fabric: { az: 200, el: 10, dist: 2.8, t: [0, 0.76, 0], silk: 1, reveal: 1, burst: 0.4 },
