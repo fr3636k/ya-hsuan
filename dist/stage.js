@@ -9,7 +9,7 @@ export const RHYTHM = [
   { key: "flash", label: "閃", dur: 0.5 },
 ];
 const CYCLE = RHYTHM.reduce((s, r) => s + r.dur, 0);
-const LOW = 0.06;
+const LOW = 0.25; // 暗的時候保留的亮度（越高越柔和，亮暗落差越小）
 const ease = (k) => (k < 0.5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2);
 
 /** 回傳 { level: 0~1.6, phase: 0 亮 | 1 暗 | 2 閃 } */
@@ -18,12 +18,12 @@ export function rhythmAt(t, mode = "rhythm") {
   if (mode === "off") return { level: 0, phase: 1 };
   if (mode === "flash") return { level: 1.6, phase: 2 }; // 截圖檢查用：固定在閃的最亮瞬間
   let x = t % CYCLE;
-  if (x < RHYTHM[0].dur) return { level: LOW + (1 - LOW) * ease(Math.min(x / 0.7, 1)), phase: 0 };
+  if (x < RHYTHM[0].dur) return { level: LOW + (1 - LOW) * ease(Math.min(x / 1.2, 1)), phase: 0 }; // 1.2 秒慢慢亮起
   x -= RHYTHM[0].dur;
-  if (x < RHYTHM[1].dur) return { level: 1 - (1 - LOW) * ease(Math.min(x / 0.6, 1)), phase: 1 };
+  if (x < RHYTHM[1].dur) return { level: 1 - (1 - LOW) * ease(Math.min(x / 1.2, 1)), phase: 1 }; // 1.2 秒慢慢變暗
   x -= RHYTHM[1].dur;
   const k = x / RHYTHM[2].dur;
-  return { level: LOW + 1.55 * Math.exp(-Math.pow((k - 0.22) / 0.11, 2)), phase: 2 };
+  return { level: LOW + 1.15 * Math.exp(-Math.pow((k - 0.3) / 0.16, 2)), phase: 2 }; // 閃一下：柔和一點
 }
 
 export function createStage(canvas, { mobile = false } = {}) {
