@@ -12,6 +12,7 @@
 - 影片若不是 9:16，會先縮放到與起始畫面等寬、再置中裁切，與 Wan 的處理方式相同。
 - --sharp-eyes：眼神銳利化（逐格找臉 → 眼睛一帶加銳利與對比）。
 - --no-chin-line：修掉下巴那條白色細線（帽兜細邊）。
+- --soft-face [0~1]：臉部柔焦，讓影片的臉接近 3D 模型的柔和質感（預設 0.6）。
 需要：pip install opencv-python numpy
 """
 import json
@@ -83,6 +84,35 @@ def remove_chin_line(img, debug=False):
     return cv2.inpaint(img, m, 4, cv2.INPAINT_TELEA)
 
 
+def soften_face(img, amount=0.6):
+    """臉部柔焦：讓 AI 影片裡太清楚的臉接近 3D 模型的柔和質感（比 3D 稍微清楚一點）。
+    只作用在臉框附近的膚色區域（羽化），衣服、手不受影響。amount 0~1：柔焦比例。"""
+    b = face_box(img)
+    if b is None:
+        return img
+    x, y, w, h = b
+    H, W = img.shape[:2]
+    m = np.zeros((H, W), np.float32)
+    cx, cy = x + w / 2, y + h * 0.5
+    yy, xx = np.mgrid[0:H, 0:W]
+    m = np.clip(1.25 - np.sqrt(((xx - cx) / (w * 0.62)) ** 2 + ((yy - cy) / (h * 0.62)) ** 2), 0, 1)
+    m = np.clip(m * 2.0, 0, 1) * amount
+    f = img.astype(np.float32)
+    soft = cv2.GaussianBlur(f, (0, 0), max(1.2, w * 0.018))
+    soft = cv2.bilateralFilter(soft.astype(np.uint8), 7, 30, 5).astype(np.float32)
+    mean = soft.mean((0, 1), keepdims=True)
+    soft = mean + (soft - mean) * 0.9  # 對比稍降
+    out = f * (1 - m[..., None]) + soft * m[..., None]
+    # 五官淡化：眼睛、眉毛一帶（臉框高度 15%～50%）的暗部拉向周圍膚色，讓五官像 3D 模型那樣柔和
+    ey0, ey1 = int(y + h * 0.15), int(y + h * 0.5)
+    band = np.zeros((H, W), np.float32)
+    band[max(0, ey0):min(H, ey1), max(0, x):min(W, x + w)] = 1
+    band = cv2.GaussianBlur(band, (0, 0), max(2, w * 0.06)) * amount
+    local = cv2.GaussianBlur(out, (0, 0), max(3, w * 0.08))
+    out = out + (local - out) * (band[..., None] * 0.55)
+    return np.clip(out, 0, 255).astype(np.uint8)
+
+
 def sharpen_eyes(img):
     b = face_box(img)
     if b is None:
@@ -118,6 +148,11 @@ def main():
         del argv[argv.index("--fps"):argv.index("--fps") + 2]
     eyes = "--sharp-eyes" in argv
     chin = "--no-chin-line" in argv
+    soft = None
+    if "--soft-face" in argv:
+        k = argv.index("--soft-face")
+        soft = float(argv[k + 1]) if k + 1 < len(argv) and not argv[k + 1].startswith("--") and argv[k + 1].replace(".", "").isdigit() else 0.6
+        del argv[k:k + (2 if k + 1 < len(argv) and argv[k + 1].replace(".", "").isdigit() else 1)]
     args = [a for a in argv if not a.startswith("--")]
     fps = int(sys.argv[sys.argv.index("--fps") + 1]) if "--fps" in sys.argv else 16
     if not args:
@@ -161,6 +196,8 @@ def main():
                     fr = remove_chin_line(fr)
                 if eyes:
                     fr = sharpen_eyes(fr)
+                if soft:
+                    fr = soften_face(fr, soft)
                 cut_pending, last = False, fr
                 cv2.imwrite(str(OUT / f"{n:03d}.jpg"), fr, [cv2.IMWRITE_JPEG_QUALITY, 84])
                 n += 1
