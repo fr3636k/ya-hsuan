@@ -234,7 +234,8 @@ float gauze = cocoon * (1.0 - rib) * uGauze;
 diffuseColor.rgb *= 1.0 - gauze * 0.12;
 diffuseColor.rgb *= 1.0 - uCocoonShade * cocoon; // 蛹的布外表略暗，讓內部透出的光成為主角
 // 臉、身體的皺褶（眼皮、鼻孔）露出的網格背面：是陰影，不是布的內側 → 壓暗，避免出現白線
-if (!gl_FrontFacing) diffuseColor.rgb *= mix(0.25, 1.0, cocoon);`,
+// 網格背面：臉部（眼皮、鼻孔）壓暗成陰影；其他地方是白布的內側 → 一律柔和白色（摺縫露出的背面不會出現刮痕或怪顏色）
+if (!gl_FrontFacing) diffuseColor.rgb = mix(vec3(0.8, 0.8, 0.82), diffuseColor.rgb * 0.25, faceZone);`,
         )
         .replace(
           "#include <roughnessmap_fragment>",
@@ -269,7 +270,7 @@ totalEmissiveRadiance *= band * uLevel * uGlow * (1.0 - faceW) * (1.0 - body * 0
 // 燈籠：布面正對鏡頭的地方（面板中央、布最薄）透光最強，折邊與骨架縫較暗
 totalEmissiveRadiance *= mix(1.0, mix(0.2, 1.35, pow(facingCam, 1.6)), uFacing * cocoon);
 totalEmissiveRadiance *= 1.0 - faceZone;
-if (!gl_FrontFacing) totalEmissiveRadiance += diffuseColor.rgb * 0.32 * cocoon;
+if (!gl_FrontFacing) totalEmissiveRadiance += diffuseColor.rgb * 0.32 * (1.0 - faceZone); // 布料內側柔光（臉除外）
 // 全身柔光：從頭到裙擺整個人一起亮（不分上下、沒有光束），臉稍微收斂以免洗白
 // 閃光以蛹為主，裙子與身體只微微跟著亮（之前裙子比蛹還白，像一條發光的帶子）
 totalEmissiveRadiance += diffuseColor.rgb * (uWhole * uLevel + uFlash * mix(0.12, 0.38, cocoon)) * (1.0 - faceZone * 0.45);

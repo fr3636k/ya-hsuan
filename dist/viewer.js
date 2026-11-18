@@ -59,6 +59,11 @@ if (camQ) {
   goView("custom", true);
 }
 if (qs.has("clean")) document.body.classList.add("clean");
+// 檢視用：同一次載入切換多個鏡頭角度（截圖工具用）
+window.__setCam = (az, el, dist, ty) => {
+  VIEWS.custom = [az, el, dist, [0, ty, 0]];
+  goView("custom", true);
+};
 
 /* ---------- 控制面板 ---------- */
 const values = {};
