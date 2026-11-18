@@ -53,10 +53,19 @@ function target(fi) {
   return out;
 }
 
-const io = new IntersectionObserver((es) => es.forEach((e) => e.target.classList.toggle("on", e.isIntersecting)), {
-  threshold: 0.35,
-});
-sections.forEach((s) => io.observe(s));
+// 同一時間只顯示一章的文字：上一章還沒結束，下一章不出現。
+// 目前章節＝頂端已經捲到畫面上方 1/3 以上的最後一章（停留中的那一章一定是目前章節）
+let activeSec = null;
+function updateActive(holding) {
+  let cur = sections[0];
+  if (holding) cur = holding;
+  else for (const s of sections) if (s.getBoundingClientRect().top <= innerHeight * 0.33) cur = s;
+  if (cur === activeSec) return;
+  activeSec?.classList.remove("on");
+  cur.classList.add("on");
+  activeSec = cur;
+}
+updateActive(null);
 // 影片起始畫面：直式視窗（fov 40、距離 ×1.25）下 dist 1.7 → 畫面半高 0.773 m；橫式 fov 30 要同樣半高
 const finaleDist = () => (innerWidth / innerHeight < 0.75 ? 1.7 : (1.7 * 1.25 * Math.tan(THREE.MathUtils.degToRad(20))) / Math.tan(THREE.MathUtils.degToRad(15)));
 function onResize() {
@@ -334,6 +343,7 @@ function frame() {
 
   const max = document.documentElement.scrollHeight - innerHeight;
   bar.style.transform = `scaleX(${max > 0 ? scrollY / max : 0})`;
+  updateActive(hold?.section ?? null);
   // 停止捲動滿 1 秒 → 再提示一次（經過第一個章節後才開始；停留中與最後一章不提示）
   idleHint = holdsDone > 0 && !hold && performance.now() - lastActivity > 1000 && fi < keys.length - 1.5;
   document.body.classList.toggle("scrolled", scrollY > 40 && !idleHint);
