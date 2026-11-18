@@ -271,7 +271,8 @@ totalEmissiveRadiance *= mix(1.0, mix(0.2, 1.35, pow(facingCam, 1.6)), uFacing *
 totalEmissiveRadiance *= 1.0 - faceZone;
 if (!gl_FrontFacing) totalEmissiveRadiance += diffuseColor.rgb * 0.32 * cocoon;
 // 全身柔光：從頭到裙擺整個人一起亮（不分上下、沒有光束），臉稍微收斂以免洗白
-totalEmissiveRadiance += diffuseColor.rgb * (uWhole * uLevel + uFlash * 0.5) * (1.0 - faceZone * 0.45);
+// 閃光以蛹為主，裙子與身體只微微跟著亮（之前裙子比蛹還白，像一條發光的帶子）
+totalEmissiveRadiance += diffuseColor.rgb * (uWhole * uLevel + uFlash * mix(0.12, 0.38, cocoon)) * (1.0 - faceZone * 0.45);
 // 照片臉部：直接呈現照片亮度，不被帽沿陰影壓暗
 totalEmissiveRadiance += faceColor * faceW * 0.92;
 // 溶解邊緣的白光
@@ -349,8 +350,8 @@ totalEmissiveRadiance += vec3(rim * 2.5) * step(uReveal, 0.999);`,
       ),
     ),
   );
-  aura.position.set(0, 0.52 * HEIGHT, 0.05);
-  aura.scale.set(1.5, 2.6, 1);
+  aura.position.set(0, 0.62 * HEIGHT, 0.05);
+  aura.scale.set(2.0, 2.4, 1);
   aura.renderOrder = 10;
   group.add(aura);
   const floor = new THREE.Mesh(
@@ -535,8 +536,8 @@ totalEmissiveRadiance += vec3(rim * 2.5) * step(uReveal, 0.999);`,
       uniforms.uFlash.value = flash;
       halo.material.opacity = 0.12 + level * 0.5 + flash * 0.3;
       halo.scale.setScalar(1.7 + level * 0.8 + flash * 0.9);
-      aura.material.opacity = flash * 0.7;
-      aura.scale.set(1.5 + flash * 0.4, 2.6 + flash * 0.5, 1);
+      aura.material.opacity = flash * 0.35;
+      aura.scale.set(2.0 + flash * 0.4, 2.4 + flash * 0.4, 1); // 接近圓形的柔光，不是長條
       floor.material.opacity = 0.15 + level * 0.3;
       updateSilk(level);
       const spread = 0.6 + 0.6 * state.burst;
