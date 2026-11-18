@@ -320,6 +320,7 @@ function frame() {
 
   const max = document.documentElement.scrollHeight - innerHeight;
   bar.style.transform = `scaleX(${max > 0 ? scrollY / max : 0})`;
+  document.body.classList.toggle("scrolled", scrollY > 40); // 往下滑之後「向下滑動」提示淡出
   veil.style.opacity = String(0.45 * (1 - Math.min(scrollY / innerHeight, 1)));
   if (phase !== lastPhase) {
     tagSteps.forEach((el) => el.classList.toggle("active", +el.dataset.phase === phase));

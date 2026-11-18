@@ -295,31 +295,76 @@ html.intro-lock body {
   overscroll-behavior: none;
   touch-action: none;
 }
-html.intro-lock .scroll-hint {
+/* 開場鎖定中、或已經往下滑之後：隱藏提示 */
+html.intro-lock .scroll-hint,
+body.scrolled .scroll-hint {
   opacity: 0;
   transform: translate(-50%, 10px);
+  pointer-events: none;
 }
 .scroll-hint {
   transition: opacity 1.2s ease, transform 1.2s ease;
 }
+/* 固定在「實際看得到的畫面」底部：iPhone Safari 的底部工具列不會擋住（原本放在第一頁最下面會被擋） */
 .scroll-hint {
-  position: absolute;
+  position: fixed;
+  z-index: 12;
   left: 50%;
-  bottom: calc(26px + env(safe-area-inset-bottom));
+  bottom: calc(30px + env(safe-area-inset-bottom));
   transform: translateX(-50%);
   margin: 0;
-  font-size: 13px;
-  letter-spacing: 0.32em;
-  color: rgba(255, 255, 255, 0.92);
-  text-shadow: 0 0 12px rgba(255, 255, 255, 0.55);
+  font-size: 14px;
+  letter-spacing: 0.34em;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
+  pointer-events: none;
 }
+/* 光影：背後一團柔光像呼吸一樣明暗 */
+.scroll-hint::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 45%;
+  width: 190px;
+  height: 90px;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(ellipse at center, rgba(255, 255, 255, 0.42), rgba(255, 255, 255, 0.1) 45%, transparent 70%);
+  filter: blur(6px);
+  z-index: -1;
+  animation: hintglow 2.4s ease-in-out infinite;
+}
+@keyframes hintglow {
+  0%,
+  100% {
+    opacity: 0.45;
+    transform: translate(-50%, -50%) scale(0.9);
+  }
+  50% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1.08);
+  }
+}
+/* 光影：一道光從左到右掃過文字 */
 .scroll-hint b {
-  font-weight: 500;
-  padding-left: 0.32em; /* 抵銷字距，讓文字置中 */
+  font-weight: 600;
+  padding-left: 0.34em; /* 抵銷字距，讓文字置中 */
+  color: #fff;
+  background: linear-gradient(105deg, rgba(255, 255, 255, 0.82) 35%, #fff 47%, #fff 53%, rgba(255, 255, 255, 0.82) 65%) 0 0 / 260% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.9));
+  animation: hintshine 2.4s linear infinite;
+}
+@keyframes hintshine {
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: -60% 0;
+  }
 }
 /* 往下的箭頭：上下輕輕跳動 */
 .scroll-hint i {
