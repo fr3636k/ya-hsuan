@@ -12,7 +12,8 @@ export const MODEL = {
     leds: "./models/emerge-c.leds.json", // LED 光點位置
     glowMin: 0.58, // 蛹的發光範圍：從腰
     glowMax: 1.0, //            到頂
-    glowStrength: 0.6, // 白光最亮時的布面發光強度
+    glowStrength: 0.85, // 白光最亮時的布面發光強度
+    wholeGlow: 0.06, // 平常整個人微微透光（閃的瞬間另外整個人一起亮）
     glowCenter: [0, 0.8, -0.12], // 內部光源位置：背後的圓弧
     backZ: -0.03, // 發光越靠背面越亮（公尺；Tripo 蛹的中軸約 z 0.02，整個背半部都要亮）
     useEmissiveMap: true, // 用處理時產生的發光遮罩（臉不發光）

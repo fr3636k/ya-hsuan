@@ -38,15 +38,21 @@ function gltfLoader() {
 export async function loadGarment(url, cfg = {}, onProgress) {
   cfg = { glowMin: 0.53, glowMax: 1.0, glowCenter: [0, 0.76, -0.02], glowStrength: 0.42, ...cfg };
   const loader = gltfLoader();
-  const firstUrl = cfg.preview ?? url;
-  const [gltf, leds, faceTex] = await Promise.all([
-    loader.loadAsync(firstUrl, (e) => onProgress && e.total && onProgress(e.loaded / e.total)),
-    fetch(cfg.leds ?? url.replace(/\.glb$/, ".leds.json")).then((r) => (r.ok ? r.json() : [])),
-    cfg.face ? new THREE.TextureLoader().loadAsync(cfg.face.url) : null,
+  const progress = (e) => onProgress && e.total && onProgress(e.loaded / e.total);
+  // 只有模型本身是必要的；LED 位置、臉部貼圖載入失敗都略過（手機快取到新舊混搭的檔案時也不會整個卡住）
+  const [first, leds, faceTex] = await Promise.all([
+    cfg.preview
+      ? loader.loadAsync(cfg.preview, progress).then((g) => ({ g, isPreview: true }), () => null) // 預覽失敗 → 改載完整模型
+      : null,
+    fetch(cfg.leds ?? url.replace(/\.glb$/, ".leds.json")).then((r) => (r.ok ? r.json() : [])).catch(() => []),
+    cfg.face ? new THREE.TextureLoader().loadAsync(cfg.face.url).catch(() => null) : null,
   ]);
+  const gltf = first ? first.g : await loader.loadAsync(url, progress);
   const model = gltf.scene;
   // 預覽已出現 → 才開始下載完整模型（不跟預覽搶頻寬）
-  const fullPromise = cfg.preview ? loader.loadAsync(url) : null;
+  // ?nofull：只用預覽模型（測試捲動、版面時用，軟體算圖的測試環境才跑得動）
+  const noFull = typeof location !== "undefined" && new URLSearchParams(location.search).has("nofull");
+  const fullPromise = first?.isPreview && !noFull ? loader.loadAsync(url) : null;
   const group = new THREE.Group();
   group.add(model);
 
@@ -54,6 +60,9 @@ export async function loadGarment(url, cfg = {}, onProgress) {
     uLevel: { value: 1 },
     uReveal: { value: 1 },
     uGlow: { value: cfg.glowStrength },
+    // 全身發光：平常整個人微微透光（uWhole），「閃」的瞬間整個人一起亮起（uFlash 0~1，由 update 依燈光強度算）
+    uWhole: { value: cfg.wholeGlow ?? 0 },
+    uFlash: { value: 0 },
     uGlowMin: { value: cfg.glowMin * HEIGHT },
     uGlowMax: { value: cfg.glowMax * HEIGHT },
     uFace: { value: faceTex },
@@ -125,6 +134,7 @@ uniform vec4 uFaceBox;
 uniform float uFacing, uCocoonShade;
 float faceZone = 0.0;
 uniform vec3 uFaceFitA, uFaceFitB;
+uniform float uWhole, uFlash;
 uniform float uLevel, uReveal, uGlow, uGlowMin, uGlowMax, uFaceOn, uFaceMinZ, uRibs, uGauze, uBackZ, uCrinkle, uBody, uUseMap;
 uniform sampler2D uFace;
 uniform vec4 uFaceRect;
@@ -260,6 +270,8 @@ totalEmissiveRadiance *= band * uLevel * uGlow * (1.0 - faceW) * (1.0 - body * 0
 totalEmissiveRadiance *= mix(1.0, mix(0.2, 1.35, pow(facingCam, 1.6)), uFacing * cocoon);
 totalEmissiveRadiance *= 1.0 - faceZone;
 if (!gl_FrontFacing) totalEmissiveRadiance += diffuseColor.rgb * 0.32 * cocoon;
+// 全身柔光：從頭到裙擺整個人一起亮（不分上下、沒有光束），臉稍微收斂以免洗白
+totalEmissiveRadiance += diffuseColor.rgb * (uWhole * uLevel + uFlash * 0.5) * (1.0 - faceZone * 0.45);
 // 照片臉部：直接呈現照片亮度，不被帽沿陰影壓暗
 totalEmissiveRadiance += faceColor * faceW * 0.92;
 // 溶解邊緣的白光
@@ -323,6 +335,24 @@ totalEmissiveRadiance += vec3(rim * 2.5) * step(uReveal, 0.999);`,
   // 光暈放在蛹的內部中心：從背面看不會蓋在殼上（之前放在背後，背面視角會整片洗白）
   halo.position.set(0, gc.y, -0.02);
   group.add(halo);
+  // 全身光暈：「閃」的瞬間在整個人周圍泛起一層柔和的白光（像柔焦光暈，不是光束）
+  const aura = new THREE.Sprite(
+    new THREE.SpriteMaterial(
+      additive(
+        radialSprite([
+          [0, "rgba(255,255,255,0.55)"],
+          [0.35, "rgba(255,255,255,0.22)"],
+          [0.7, "rgba(255,255,255,0.05)"],
+          [1, "rgba(255,255,255,0)"],
+        ]),
+        { depthTest: false, opacity: 0 },
+      ),
+    ),
+  );
+  aura.position.set(0, 0.52 * HEIGHT, 0.05);
+  aura.scale.set(1.5, 2.6, 1);
+  aura.renderOrder = 10;
+  group.add(aura);
   const floor = new THREE.Mesh(
     new THREE.CircleGeometry(1.6, 64),
     new THREE.MeshBasicMaterial(
@@ -501,8 +531,12 @@ totalEmissiveRadiance += vec3(rim * 2.5) * step(uReveal, 0.999);`,
       faceLight.intensity = (cfg.faceLight ?? 4) * state.reveal;
       dotMat.opacity = Math.min(1, 0.05 + level * 0.95);
       dotMat.size = 0.012 + level * 0.01;
-      halo.material.opacity = 0.1 + level * 0.45;
-      halo.scale.setScalar(1.6 + level * 0.7);
+      const flash = Math.min(1, Math.max(0, (level - 1.0) / 0.55)); // 只在「閃」的瞬間 > 0
+      uniforms.uFlash.value = flash;
+      halo.material.opacity = 0.12 + level * 0.5 + flash * 0.3;
+      halo.scale.setScalar(1.7 + level * 0.8 + flash * 0.9);
+      aura.material.opacity = flash * 0.7;
+      aura.scale.set(1.5 + flash * 0.4, 2.6 + flash * 0.5, 1);
       floor.material.opacity = 0.15 + level * 0.3;
       updateSilk(level);
       const spread = 0.6 + 0.6 * state.burst;

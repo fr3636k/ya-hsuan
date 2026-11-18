@@ -16,6 +16,7 @@ const ease = (k) => (k < 0.5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2);
 export function rhythmAt(t, mode = "rhythm") {
   if (mode === "on") return { level: 1, phase: 0 };
   if (mode === "off") return { level: 0, phase: 1 };
+  if (mode === "flash") return { level: 1.6, phase: 2 }; // 截圖檢查用：固定在閃的最亮瞬間
   let x = t % CYCLE;
   if (x < RHYTHM[0].dur) return { level: LOW + (1 - LOW) * ease(Math.min(x / 0.7, 1)), phase: 0 };
   x -= RHYTHM[0].dur;
