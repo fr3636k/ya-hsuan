@@ -103,6 +103,17 @@ const visited = new Set();
 let hold = null; // { section, until, pending }
 let lastScrollY = scrollY;
 let touchY = null;
+// 經過第一個章節後：畫面停止捲動滿 1 秒 → 再次提示「向下滑動」；一滑就收起（最後一章不提示）
+let lastActivity = 0,
+  holdsDone = 0,
+  idleHint = false;
+const markActivity = () => {
+  lastActivity = performance.now();
+  idleHint = false;
+};
+addEventListener("wheel", markActivity, { passive: true });
+addEventListener("touchmove", markActivity, { passive: true });
+addEventListener("keydown", markActivity);
 const HOLD_MS = 1600; // 停留時間
 const DRIFT_PX = 30; // 停留期間內容緩慢上移的距離（看起來還在滑，只是很慢）
 function pull(px) {
@@ -133,6 +144,8 @@ function endHold() {
   pull(0);
   window.scrollTo({ top: y + Math.round(offset), behavior: "instant" });
   lastScrollY = scrollY;
+  holdsDone++;
+  lastActivity = performance.now(); // 從停留結束起算 1 秒
   // 停留期間的滑動意圖：順順接上（最多半個畫面），不會被吃掉
   const rest = pending - offset;
   if (rest > 8) window.scrollBy({ top: Math.min(rest, innerHeight * 0.5), behavior: "smooth" });
@@ -145,6 +158,7 @@ addEventListener(
   () => {
     const y = scrollY,
       down = y > lastScrollY;
+    if (!hold) markActivity(); // 任何捲動（手滑或自動接續）都算還在動
     lastScrollY = y;
     if (hold) {
       // 手機放開後的慣性捲動不會觸發 touchmove：被推走就拉回停留位置，推動量算進累積的滑動
@@ -320,7 +334,10 @@ function frame() {
 
   const max = document.documentElement.scrollHeight - innerHeight;
   bar.style.transform = `scaleX(${max > 0 ? scrollY / max : 0})`;
-  document.body.classList.toggle("scrolled", scrollY > 40); // 往下滑之後「向下滑動」提示淡出
+  // 停止捲動滿 1 秒 → 再提示一次（經過第一個章節後才開始；停留中與最後一章不提示）
+  idleHint = holdsDone > 0 && !hold && performance.now() - lastActivity > 1000 && fi < keys.length - 1.5;
+  document.body.classList.toggle("scrolled", scrollY > 40 && !idleHint);
+  if (introFixed !== null || location.search.includes("debughint")) document.body.dataset.hint = `${idleHint ? 1 : 0}|${holdsDone}|${Math.round(performance.now() - lastActivity)}`; // 往下滑之後「向下滑動」提示淡出
   veil.style.opacity = String(0.45 * (1 - Math.min(scrollY / innerHeight, 1)));
   if (phase !== lastPhase) {
     tagSteps.forEach((el) => el.classList.toggle("active", +el.dataset.phase === phase));
