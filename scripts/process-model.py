@@ -511,6 +511,86 @@ def blend_face_seams(out, xyz, region, voxel=0.003, ring=4):
     return out * (1 - w) + col * w
 
 
+# V2 造型修正（作者回饋）：裙子垂直往下、腰部交接處整理成微露的腰、整體皺褶撫平
+RESHAPE = {
+    "skirt": (0.12, 0.90),     # 裙子拉直的範圍（公尺）：魚尾上方到臀部骨架下緣（臀部骨架與魚尾荷葉邊不動）
+    "skirt_ref": (0.80, 0.86), # 以臀部骨架正下方這一段的半徑為準（0.86 以上會量到骨架往下垂的邊），往下維持同樣寬度（垂直往下）
+    "waist": (1.095, 1.178),   # 露腰的高度範圍（蛹下緣與裙子上緣之間；上緣不能壓到蛹的下緣）
+    "waist_r": (0.125, 0.105), # 腰身半徑（左右 x、前後 z）
+    "smooth_iters": 4,         # 整體布料平滑（皺褶撫平），臉除外
+}
+
+
+def _weld(mesh):
+    v = mesh.vertices.copy()
+    key = np.round(v / 1e-5).astype(np.int64)
+    _, uid, inv = np.unique(key, axis=0, return_index=True, return_inverse=True)
+    inv = inv.ravel()
+    e = inv[mesh.edges_unique]
+    return v[uid].copy(), inv, e[e[:, 0] != e[:, 1]]
+
+
+def _taubin(P, e, w, iters, lam=0.5, mu=-0.53):
+    deg = np.bincount(e.ravel(), minlength=len(P)).astype(np.float64)
+    for _ in range(iters):
+        for f in (lam, mu):
+            acc = np.zeros_like(P)
+            np.add.at(acc, e[:, 0], P[e[:, 1]])
+            np.add.at(acc, e[:, 1], P[e[:, 0]])
+            P = P + (f * w)[:, None] * (acc / np.maximum(deg, 1)[:, None] - P)
+    return P
+
+
+def reshape_v2(mesh, cfg=RESHAPE):
+    P, inv, e = _weld(mesh)
+    x, y, z = P[:, 0], P[:, 1], P[:, 2]
+    sm = lambda a, b, t: np.clip((t - a) / (b - a), 0, 1) ** 2 * (3 - 2 * np.clip((t - a) / (b - a), 0, 1))
+    # 1. 裙子垂直往下：每 2 cm 一層，半徑小於 skirt_r 的層往外放大到 skirt_r（兩端漸變）
+    y0, y1 = cfg["skirt"]
+    ra, rb = cfg["skirt_ref"]
+    ref = (y > ra) & (y < rb)
+    rcx, rcz = np.median(x[ref]), np.median(z[ref])
+    skirt_r = np.percentile(np.hypot(x[ref] - rcx, z[ref] - rcz), 90)
+    wy = sm(y0 - 0.05, y0 + 0.04, y) * (1 - sm(y1 - 0.03, y1, y))
+    # 每 1 cm 量一次寬度與中心，沿高度平滑後逐點連續套用（不會出現一圈圈的階梯紋）
+    ys = np.arange(y0 - 0.06, y1 + 0.005, 0.01)
+    cxs, czs, rs = [], [], []
+    for yy in ys:
+        s_ = np.abs(y - yy) < 0.012
+        cx_, cz_ = np.median(x[s_]), np.median(z[s_])
+        cxs.append(cx_); czs.append(cz_)
+        rs.append(np.percentile(np.hypot(x[s_] - cx_, z[s_] - cz_), 90))
+    k5 = np.ones(7) / 7
+    smo = lambda arr: np.convolve(np.pad(np.array(arr), 3, mode="edge"), k5, "valid")
+    cxs, czs, rs = smo(cxs), smo(czs), smo(rs)
+    fs = np.maximum(1.0, skirt_r / np.maximum(rs, 1e-3))
+    f_v = 1 + (np.interp(y, ys, fs) - 1) * wy
+    ccx, ccz = np.interp(y, ys, cxs), np.interp(y, ys, czs)
+    fac = np.where(wy > 0, f_v, 1.0)
+    P[:, 0] = ccx + (x - ccx) * fac
+    P[:, 2] = ccz + (z - ccz) * fac
+    # 2. 腰部：交接處的扭結與垂布收進腰身橢圓（只把超出的收進來），再大量平滑 → 平順的腰
+    a, b2 = cfg["waist"]
+    ww = sm(a - 0.012, a + 0.006, y) * (1 - sm(b2 - 0.006, b2 + 0.012, y))
+    s = ww > 0
+    cx, cz = np.median(x[s]), np.median(z[s])
+    rx, rz = cfg["waist_r"]
+    dx, dz = P[:, 0] - cx, P[:, 2] - cz
+    q = np.sqrt((dx / rx) ** 2 + (dz / rz) ** 2)
+    # 腰身範圍內所有點都貼到平滑的腰身表面（扭結、布片皺摺完全消失）；中間稍微收細，做出自然的腰線
+    tw = np.clip((P[:, 1] - a) / (b2 - a), 0, 1)
+    curve = 1 - 0.07 * np.sin(np.pi * tw)
+    k = curve / np.maximum(q, 1e-6)
+    P[:, 0] = cx + dx * (1 + (k - 1) * ww)
+    P[:, 2] = cz + dz * (1 + (k - 1) * ww)
+    P = _taubin(P, e, np.clip(ww * 1.0, 0, 1), 60)
+    # 3. 整體皺褶撫平（臉與脖子不動）
+    face = (np.abs(P[:, 0]) < 0.09) & (P[:, 1] > 1.35) & (P[:, 1] < 1.7) & (P[:, 2] > 0.0)
+    P = _taubin(P, e, np.where(face, 0.0, 1.0), cfg["smooth_iters"])
+    mesh.vertices = P[inv]
+    print(f"reshape: skirt radius → {skirt_r:.3f} m (臀部骨架下緣)", "| skirt widened verts", int((fac > 1.001).sum()), "| waist verts", int(s.sum()), f"| waist center ({cx:.3f},{cz:.3f})")
+
+
 def smooth_face(mesh, iters=12, lam=0.5, mu=-0.53):
     """V2：臉部網格平滑（Taubin，不縮小），只作用在臉與脖子，邊緣漸弱。
     貼圖接縫上的重複頂點依位置合併後一起移動，避免裂開。"""
@@ -576,7 +656,7 @@ def process_texture_tripo(img, xyz):
     # 保留區邊緣柔化
     kf = np.asarray(Image.fromarray((keep * 255).astype(np.uint8)).filter(ImageFilter.GaussianBlur(1.5))).astype(np.float32) / 255
     base = np.where(skirt, 0.86, 0.82)
-    gain = np.where(skirt, 1.5, 1.1)
+    gain = np.where(skirt, 0.9, 0.55)  # 布料皺褶細節減弱（作者：皺褶太明顯）
     # 細節的暗部限深：小黑點（原始貼圖的污漬）不保留，正常皺褶的陰影不受影響
     dclip = np.where(skirt, np.clip(detail, -0.14, 0.14), np.clip(detail, -0.07, 0.1))
     newL = np.clip(base + dclip * gain, 0, 1)
@@ -612,7 +692,31 @@ def process_texture_tripo(img, xyz):
     face = face_lift(a)  # 臉提亮（暗部拉起來、亮部不爆），保留原本五官與膚色
     w = kf[..., None]
     out = cleaned * (1 - w) + face * w
+    skin_w = np.zeros(out.shape[:2], np.float32)
+    # 作者回饋：裡面沒有穿衣服（只有外殼）、上下兩段之間微露腰 → 襯衫與腰部改成她的膚色（保留明暗）
+    skin_src = keep & skinish & (v > 0.25) & (Y > 1.47)
+    if skin_src.any():
+        skin_rgb = np.clip(face_lift(np.median(a[skin_src], axis=0)[None, None, :])[0, 0] * 1.18, 0, 1)  # 身上在殼的陰影裡，提亮才和臉接近
+        shade = np.clip(1.0 + (L - low) * 0.6, 0.92, 1.05)[..., None]  # 只留一點明暗，原本布料的皺褶紋路淡掉
+        skin_tex = np.clip(skin_rgb * shade, 0, 1)
+        # 襯衫：殼的開口裡、胸口一帶偏暖色（米色）的布
+        shirt = (Y > 1.12) & (Y < 1.47) & (np.abs(X) < 0.14) & (h > 8) & (h < 55) & (s > 0.08) & (v > 0.2) & ~unused
+        # 腰部：蛹下緣與裙子上緣之間一圈
+        # 腰部：上色範圍略小於造型範圍，上緣不蓋到蛹的下緣；上下 1 cm 漸層過渡，不留硬邊
+        wa, wb = RESHAPE["waist"][0] + 0.005, RESHAPE["waist"][1]
+        waist_w = np.clip((Y - wa) / 0.01, 0, 1) * np.clip((wb - Y) / 0.01, 0, 1) * (~unused)
+        # 腰部範圍往外多補 3 像素（蓋住貼圖接縫邊緣混到的白布），腰上不留原本布料的明暗紋路
+        waist_w = np.maximum(waist_w, cv2_dilate(waist_w > 0.5, 3) * 0.999)
+        shade = np.where((waist_w > 0)[..., None], np.clip(0.97 + (L - low)[..., None] * 0.2, 0.95, 1.0), shade)
+        skin_tex = np.clip(skin_rgb * shade, 0, 1)
+        sk = np.maximum(shirt.astype(np.float32), waist_w.astype(np.float32))
+        sk = np.asarray(Image.fromarray((sk * 255).astype(np.uint8)).filter(ImageFilter.GaussianBlur(1.0))).astype(np.float32)[..., None] / 255
+        waist = waist_w > 0.5
+        out = out * (1 - sk) + skin_tex * sk
+        skin_w = sk[..., 0]
+        print("skin recolor: shirt texels", int(shirt.sum()), "waist texels", int(waist.sum()))
     mask = np.where(~skirt & (kf < 0.5), 1.0, 0.0).astype(np.float32)
+    mask = mask * (1 - skin_w)  # 皮膚（襯衫改的胸口、露腰）不是蛹的布：不發光、不套布料壓暗
     # 補邊：貼圖區塊之間的空隙用相鄰區塊的顏色往外擴，避免接縫滲出白線（臉上尤其明顯）
     used = (~unused).astype(np.float32)
     out = pad_islands(out, used)
@@ -649,6 +753,7 @@ def main():
     if not tripo:
         sculpt(mesh)
     else:
+        reshape_v2(mesh)
         smooth_face(mesh)
 
     # 2~4. 貼圖與材質
