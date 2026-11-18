@@ -202,7 +202,7 @@ main {
   min-height: 100vh;
   min-height: 100svh;
   position: relative;
-  padding: 38vh var(--gutter) 0;
+  padding: 15vh var(--gutter) 0; /* 文字停在畫面上方 */
 }
 .chapter.tall {
   min-height: 170vh;
@@ -210,7 +210,7 @@ main {
 }
 .copy {
   position: sticky;
-  top: 38vh;
+  top: 15vh;
   max-width: 280px;
   opacity: 0;
   transform: translateY(18px);
@@ -481,10 +481,11 @@ body.scrolled .scroll-hint {
 
 /* ---------- 手機 ---------- */
 @media (max-width: 720px) {
+  /* 手機：01～04 章文字停在上方（導覽列下方），模型在右下 */
   .copy {
-    top: auto;
+    top: calc(76px + env(safe-area-inset-top));
     position: sticky;
-    bottom: calc(64px + env(safe-area-inset-bottom));
+    bottom: auto;
     margin: 0;
     margin-left: 0;
     padding: 0;
@@ -494,9 +495,9 @@ body.scrolled .scroll-hint {
   .chapter:not(.hero):not(.finale) {
     display: flex;
     flex-direction: column;
-    justify-content: flex-end;
-    padding-top: 0;
-    padding-bottom: calc(64px + env(safe-area-inset-bottom));
+    justify-content: flex-start;
+    padding-top: calc(76px + env(safe-area-inset-top));
+    padding-bottom: 0;
   }
   .copy h2 {
     font-size: 19px;
