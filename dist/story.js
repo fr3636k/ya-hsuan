@@ -94,6 +94,107 @@ const blockKeys = (e) => isLocked() && ["ArrowDown", "ArrowUp", "PageDown", "Pag
 addEventListener("wheel", blockScroll, { passive: false });
 addEventListener("touchmove", blockScroll, { passive: false });
 addEventListener("keydown", blockKeys);
+/* ---------- 01～04 章節：滑到頂端停留 1 秒 ----------
+   停留時仍有回饋，不像當機：滑動會讓內容像有彈性一樣微微拉動（放開彈回）、章節文字下方的細線 1 秒畫滿、
+   3D 鏡頭與燈光持續；1 秒後把停留期間累積的滑動量順順接上，繼續往下。手機觸控、滾輪、鍵盤都適用。 */
+const holdSections = sections.filter((s) => ["emerge", "face", "fabric", "tail"].includes(s.dataset.key));
+const mainEl = document.querySelector("main");
+const visited = new Set();
+let hold = null; // { section, until, pending }
+let lastScrollY = scrollY;
+let touchY = null;
+const HOLD_MS = 1600; // 停留時間
+const DRIFT_PX = 30; // 停留期間內容緩慢上移的距離（看起來還在滑，只是很慢）
+function pull(px) {
+  mainEl.style.transform = px ? `translateY(${-px}px)` : "";
+}
+function startHold(sec) {
+  visited.add(sec);
+  const y = Math.round(scrollY + sec.getBoundingClientRect().top);
+  window.scrollTo({ top: y, behavior: "instant" });
+  hold = { section: sec, start: performance.now(), until: performance.now() + HOLD_MS, pending: 0, y, offset: 0 };
+  sec.classList.add("holding");
+  mainEl.style.transition = "none"; // 停留期間每一格由 holdFrame() 控制位置
+}
+// 停留期間每一格：內容緩慢上移（緩入緩出）＋使用者滑動的彈性拉動
+function holdFrame(now) {
+  const k = Math.min(1, (now - hold.start) / HOLD_MS);
+  const drift = DRIFT_PX * (k * k * (3 - 2 * k));
+  const elastic = 22 * Math.tanh(hold.pending / 260);
+  hold.offset = drift + elastic;
+  pull(hold.offset);
+}
+function endHold() {
+  const { section, pending, y, offset } = hold;
+  hold = null;
+  section.classList.remove("holding");
+  // 無縫接回：把畫面上的位移換成真正的捲動位置（看起來不會跳）
+  mainEl.style.transition = "none";
+  pull(0);
+  window.scrollTo({ top: y + Math.round(offset), behavior: "instant" });
+  lastScrollY = scrollY;
+  // 停留期間的滑動意圖：順順接上（最多半個畫面），不會被吃掉
+  const rest = pending - offset;
+  if (rest > 8) window.scrollBy({ top: Math.min(rest, innerHeight * 0.5), behavior: "smooth" });
+}
+function absorb(dy) {
+  hold.pending = Math.max(0, hold.pending + dy);
+}
+addEventListener(
+  "scroll",
+  () => {
+    const y = scrollY,
+      down = y > lastScrollY;
+    lastScrollY = y;
+    if (hold) {
+      // 手機放開後的慣性捲動不會觸發 touchmove：被推走就拉回停留位置，推動量算進累積的滑動
+      if (Math.abs(y - hold.y) > 1) {
+        absorb(y - hold.y);
+        window.scrollTo({ top: hold.y, behavior: "instant" });
+        lastScrollY = hold.y;
+      }
+      return;
+    }
+    if (isLocked()) return;
+    for (const s of holdSections) {
+      const top = s.getBoundingClientRect().top;
+      if (top > innerHeight * 0.5) visited.delete(s); // 往回滑到它上方 → 下次再停
+      else if (down && !visited.has(s) && top <= 2 && top > -innerHeight * 0.6) {
+        startHold(s);
+        break;
+      }
+    }
+  },
+  { passive: true },
+);
+addEventListener(
+  "wheel",
+  (e) => {
+    if (!hold) return;
+    if (e.cancelable) e.preventDefault();
+    absorb(e.deltaY * (e.deltaMode === 1 ? 16 : 1));
+  },
+  { passive: false },
+);
+addEventListener("touchstart", (e) => (touchY = e.touches[0]?.clientY ?? null), { passive: true });
+addEventListener(
+  "touchmove",
+  (e) => {
+    const y = e.touches[0]?.clientY;
+    if (hold) {
+      if (e.cancelable) e.preventDefault();
+      if (touchY != null && y != null) absorb(touchY - y);
+    }
+    touchY = y ?? touchY;
+  },
+  { passive: false },
+);
+addEventListener("keydown", (e) => {
+  if (!hold || !["ArrowDown", "PageDown", " ", "Space"].includes(e.key)) return;
+  e.preventDefault();
+  absorb(innerHeight * 0.4);
+});
+
 function unlockIntro() {
   window.scrollTo(0, 0);
   document.documentElement.classList.remove("intro-lock");
@@ -171,7 +272,8 @@ function frame() {
   }
   const ip = introFixed !== null ? +introFixed : INTRO ? introT / INTRO : 1;
   // 開場跑完（燈全亮）才能往下滑，並淡入「向下滑動」
-  if (isLocked() && (performance.now() >= 3000 || forced !== null)) unlockIntro(); // 打開網頁 3 秒後可以往下滑
+  if (isLocked() && (time >= 3 || forced !== null)) unlockIntro(); // 開場 3 秒（從 3D 模型出現起算）後可以往下滑
+  if (hold) performance.now() >= hold.until ? endHold() : holdFrame(performance.now());
   garment.set({ silk: cur.silk, reveal: cur.reveal, burst: cur.burst, grip: gripSeq ? 0 : gripEased }); // 有影片時 3D 不自己撥開
   const rh = rhythmAt(time);
   const phase = rh.phase;

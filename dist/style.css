@@ -70,6 +70,28 @@ body.ready #stage {
 .detail-tip.hide {
   opacity: 0;
 }
+/* 章節停留 1 秒：文字下方的細線在 1 秒內畫滿（讓人知道正在停留，不是當機） */
+.copy::after {
+  content: "";
+  display: block;
+  height: 1px;
+  margin-top: 14px;
+  width: 64px;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.85), rgba(255, 255, 255, 0.85)) no-repeat 0 0 / 0% 100%,
+    rgba(255, 255, 255, 0.12);
+}
+.hero .copy::after,
+.finale .copy::after {
+  display: none;
+}
+.chapter.holding .copy::after {
+  animation: holdbar 1.6s linear forwards;
+}
+@keyframes holdbar {
+  to {
+    background-size: 100% 100%, auto;
+  }
+}
 .veil {
   position: fixed;
   inset: 0;
@@ -286,13 +308,39 @@ html.intro-lock .scroll-hint {
   bottom: calc(26px + env(safe-area-inset-bottom));
   transform: translateX(-50%);
   margin: 0;
-  font-size: 10px;
-  letter-spacing: 0.3em;
-  color: var(--muted);
+  font-size: 13px;
+  letter-spacing: 0.32em;
+  color: rgba(255, 255, 255, 0.92);
+  text-shadow: 0 0 12px rgba(255, 255, 255, 0.55);
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 8px;
+}
+.scroll-hint b {
+  font-weight: 500;
+  padding-left: 0.32em; /* 抵銷字距，讓文字置中 */
+}
+/* 往下的箭頭：上下輕輕跳動 */
+.scroll-hint i {
+  width: 12px;
+  height: 12px;
+  border-right: 1.5px solid #fff;
+  border-bottom: 1.5px solid #fff;
+  transform: rotate(45deg);
+  filter: drop-shadow(0 0 6px rgba(255, 255, 255, 0.8));
+  animation: hintbob 1.6s ease-in-out infinite;
+}
+@keyframes hintbob {
+  0%,
+  100% {
+    transform: translateY(0) rotate(45deg);
+    opacity: 0.6;
+  }
+  50% {
+    transform: translateY(7px) rotate(45deg);
+    opacity: 1;
+  }
 }
 .scroll-hint span {
   width: 1px;

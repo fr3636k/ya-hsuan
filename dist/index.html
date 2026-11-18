@@ -8,8 +8,8 @@
     <!-- 重新整理時一律回到最上方（不讓瀏覽器還原上次的捲動位置），開場才會從頭播 -->
     <script>
       if ("scrollRestoration" in history) history.scrollRestoration = "manual";
-      document.documentElement.classList.add("intro-lock"); // 打開網頁後 3 秒內不能往下滑
-      setTimeout(() => document.documentElement.classList.remove("intro-lock"), 3000);
+      document.documentElement.classList.add("intro-lock"); // 開場 3 秒內不能往下滑（從 3D 模型出現起算，story.js 解除）
+      setTimeout(() => document.documentElement.classList.remove("intro-lock"), 20000); // 保險：模型一直載不出來，最多 20 秒
       window.scrollTo(0, 0);
       addEventListener("pageshow", () => window.scrollTo(0, 0));
     </script>
@@ -50,7 +50,7 @@
           <h1>破蛹</h1>
           <p class="lead">一件會呼吸的光之繭。<br /><span class="sub">取材凱達格蘭族母系社會，以女性破蛹而出為意象。</span></p>
         </div>
-        <p class="scroll-hint">向下滑動<span></span></p>
+        <p class="scroll-hint"><b>向下滑動</b><i aria-hidden="true"></i></p>
       </section>
 
       <section class="chapter" data-key="emerge">
