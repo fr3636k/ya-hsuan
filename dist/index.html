@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
     <meta name="theme-color" content="#000000" />
-    <title>破蛹 EMERGE</title>
+    <title>破蛹 EMERGE｜楊亞璇・實踐大學服裝設計系</title>
     <!-- 重新整理時一律回到最上方（不讓瀏覽器還原上次的捲動位置），開場才會從頭播 -->
     <script>
       if ("scrollRestoration" in history) history.scrollRestoration = "manual";
@@ -18,7 +18,7 @@
     <link rel="modulepreload" href="./story.js" />
     <link rel="modulepreload" href="./garment-glb.js" />
     <link rel="preload" href="./models/emerge-c-preview.glb" as="fetch" crossorigin="anonymous" />
-    <meta name="description" content="以凱達格蘭族女巫為靈感的光繭服裝。女巫象徵知識與權力；白光以亮、暗、閃的節奏呼吸，往下滑看她破蛹蛻變。" />
+    <meta name="description" content="設計者楊亞璇（實踐大學服裝設計系）。以凱達格蘭族女巫為靈感的光繭服裝：女巫象徵知識與權力，是一種對認知的運用。燈光從北投的煙霧出發，以呼吸與快速換氣的節奏，說一段女性在「破」之中蛻變的過程。" />
     <link rel="stylesheet" href="./style.css" />
     <script type="importmap">
       { "imports": { "three": "./vendor/three.module.js" } }
@@ -32,7 +32,6 @@
 
     <header class="nav">
       <span class="nav-name">破蛹 <em>EMERGE</em></span>
-      <a class="nav-btn" href="./viewer.html">3D 檢視</a>
     </header>
 
     <div class="light-tag">
@@ -42,22 +41,26 @@
       <span class="lt-step" data-phase="2">閃</span>
     </div>
     <nav class="progress" aria-hidden="true"><i></i></nav>
+    <nav class="dots" aria-label="章節"></nav>
 
     <main>
       <section class="chapter hero" data-key="hero">
         <div class="copy">
           <p class="eyebrow">Ketagalan · 凱達格蘭</p>
           <h1>破蛹</h1>
-          <p class="lead">一件會呼吸的光之繭。<br /><span class="sub">在凱達格蘭族，女巫象徵知識與權力。這件作品說的是女性在「破」之中蛻變的過程。</span></p>
+          <p class="credit"><small>設計者</small><b>楊亞璇</b><span>實踐大學 服裝設計系</span></p>
+          <p class="lead">一件會呼吸的光之繭。<br /><span class="sub">在凱達格蘭族，女巫象徵知識與權力，不同於典型的女巫，更像一種對認知的運用。這件作品想傳達的，是女性蛻變、擁有力量的過程。</span></p>
         </div>
-        <p class="scroll-hint"><b>向下滑動</b><i aria-hidden="true"></i></p>
+        <p class="scroll-hint"><b class="hint-touch">手指向上滑動</b><b class="hint-mouse">滾動滑鼠往下看</b><i aria-hidden="true"></i></p>
+        <p class="lock-hint" aria-hidden="true">開場播放中，稍候即可滑動</p>
       </section>
 
       <section class="chapter" data-key="emerge">
         <div class="copy">
           <p class="num">01</p>
           <h2>破蛹而出</h2>
-          <p>被世俗框住的她，在掙扎與自我搏鬥中成長。光芒綻放，她自光中顯現。</p>
+          <p>一個被世俗框架住的女性，在掙扎、自我搏鬥中成長。</p>
+          <p>這份力量是一種突破，也是一種微妙的蛻變。光芒綻放，她自光中顯現。</p>
         </div>
       </section>
 
@@ -65,18 +68,20 @@
         <div class="copy">
           <p class="num">02 · 細節</p>
           <h2>帽沿與臉</h2>
-          <p>繭的頂端翻折成帽沿，壓低在眉間。不被認同的她藏在繭的開口裡，靜靜壯大。</p>
+          <p>繭的頂端翻折成帽沿，壓低在眉間，臉藏在繭的開口裡：想被看到，又不想被看到。</p>
+          <p>一個不被認同的女性，在探索、破壞原有的界線下壯大。</p>
         </div>
       </section>
 
       <section class="chapter" data-key="fabric">
         <div class="copy">
-          <p class="num">03 · 細節</p>
-          <h2>皺褶與白光</h2>
-          <p>壓皺的珠光布以條帶分瓣，光從瓣間的裂隙透出。破，讓空間有了延展。</p>
+          <p class="num">03 · 燈光</p>
+          <h2>煙霧與呼吸</h2>
+          <p>燈光的起點是北投瀰漫的煙霧。煙霧是一種不確定，光從壓皺的珠光布瓣間透出，若隱若現。</p>
+          <p>一亮一暗的呼吸是生生不息，向自己以外的人說：我在這裡發亮著。快速換氣的那一閃，是渴望突破，也是正在突破。</p>
           <ol class="rhythm" aria-label="燈光節奏">
-            <li data-phase="0"><b>亮</b><small>蛻變</small></li>
-            <li data-phase="1"><b>暗</b><small>掙扎</small></li>
+            <li data-phase="0"><b>亮</b><small>發亮著</small></li>
+            <li data-phase="1"><b>暗</b><small>呼吸</small></li>
             <li data-phase="2"><b>閃</b><small>突破</small></li>
           </ol>
         </div>
@@ -86,16 +91,18 @@
         <div class="copy">
           <p class="num">04 · 細節</p>
           <h2>針織魚尾</h2>
-          <p>波紋針織裹住雙腿，到了腳邊才散成荷葉褶。束縛的盡頭，留給幻想一點氛圍。</p>
+          <p>波紋針織緊緊裹住雙腿，到了腳邊以斜角張開。</p>
+          <p>破會給空間延展性，破會給幻想多點氛圍。</p>
         </div>
       </section>
 
       <section class="chapter finale" data-key="finale">
         <div class="copy">
           <h2>破蛹</h2>
-          <p>她抓住繭，探索、破壞原有的界線。<br />破，讓她蛻變成理想的樣子。</p>
-          <p class="sub">凱達格蘭族 · 女巫 · 女性蛻變的力量</p>
-          <a class="cta" href="./viewer.html">進入 3D 檢視</a>
+          <p>她抓住繭，準備把它撐開。<br />破會給話語間多點挽留，而破會讓女性蛻變成理想的樣子。</p>
+          <blockquote class="statement">凱達格蘭女巫一族，帶給我對自我角色的反思與進化。</blockquote>
+          <p class="credit"><small>設計者</small><b>楊亞璇</b><span>實踐大學 服裝設計系</span></p>
+          <p class="cta-row"><a class="cta" href="./viewer.html">進入 3D 檢視</a></p>
         </div>
       </section>
     </main>

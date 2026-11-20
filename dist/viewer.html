@@ -20,7 +20,7 @@
     <div class="loading" role="status"><span>載入 3D 模型</span><b><i></i></b></div>
 
     <header class="nav">
-      <span class="nav-name">破蛹 <em>3D 檢視</em></span>
+      <span class="nav-name">破蛹 <em>3D 檢視</em><span class="nav-credit">設計者 楊亞璇・實踐大學服裝設計系</span></span>
       <a class="nav-btn" href="./">返回展示</a>
     </header>
 
@@ -32,7 +32,7 @@
     </div>
 
     <aside class="panel" id="panel">
-      <button class="panel-toggle" id="panelToggle" aria-expanded="false" aria-controls="panel">調整模型</button>
+      <button class="panel-toggle" id="panelToggle" aria-expanded="false" aria-controls="panel">燈光與效果</button>
 
       <div class="group">
         <h3>視角</h3>
@@ -50,8 +50,8 @@
 
       <div class="group">
         <h3>破蛹</h3>
-        <label class="row">抓住蛹<input type="range" id="grip" min="0" max="1" step="0.01" value="0" /><output for="grip"></output></label>
-        <label class="row">顯現<input type="range" id="reveal" min="0" max="1" step="0.01" value="1" /><output for="reveal"></output></label>
+        <label class="row" hidden>抓住蛹<input type="range" id="grip" min="0" max="1" step="0.01" value="0" /><output for="grip"></output></label>
+        <label class="row" hidden>顯現<input type="range" id="reveal" min="0" max="1" step="0.01" value="1" /><output for="reveal"></output></label>
         <label class="row">絲線外繭<input type="range" id="silk" min="0" max="1" step="0.01" value="0" /><output for="silk"></output></label>
       </div>
 
@@ -65,13 +65,7 @@
         <label class="row">節奏速度<input type="range" id="speed" min="0.25" max="2" step="0.05" value="1" /><output for="speed"></output></label>
       </div>
 
-      <div class="group" id="refGroup" hidden>
-        <h3>對照照片（僅本機）</h3>
-        <div class="refs" id="refs"></div>
-        <p class="note">點照片放大，與模型並排比對。發布到網路時不會包含這些照片。</p>
-      </div>
     </aside>
-    <img class="ref-big" id="refBig" alt="參考照片放大" />
 
     <script type="module" src="./viewer.js"></script>
   </body>

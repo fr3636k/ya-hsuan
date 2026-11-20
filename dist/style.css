@@ -746,8 +746,551 @@ body.viewer #stage:active {
 }
 
 /* 比對截圖用 */
+body.clean .viewbar,
+body.clean .gesture-tip,
+body.clean .detail-tip,
 body.clean .panel,
 body.clean .nav,
 body.clean .light-tag {
   display: none;
+}
+
+/* ============================================================
+   2026-11-20 使用者測試回饋：字不夠明顯、不知道怎麼操作
+   ============================================================ */
+/* ---------- 文字加大、加亮 ---------- */
+.copy {
+  max-width: 340px;
+  text-shadow: 0 1px 16px #000, 0 0 4px rgba(0, 0, 0, 0.95), 0 0 28px rgba(0, 0, 0, 0.7);
+}
+.copy h2 {
+  font-size: 30px;
+  font-weight: 700;
+  margin-bottom: 12px;
+}
+.copy p {
+  font-size: 16px;
+  line-height: 1.8;
+  color: #f0f0f3;
+  font-weight: 500;
+}
+.copy .num {
+  font-size: 12.5px;
+  color: #c2c2c8;
+}
+.eyebrow {
+  font-size: 12px !important;
+  color: #c2c2c8 !important;
+}
+.lead {
+  font-size: 17px !important;
+}
+.lead .sub {
+  font-size: 14px;
+  color: #d4d4d9;
+  line-height: 1.75;
+}
+.hero .copy {
+  max-width: 380px;
+}
+.rhythm b {
+  font-size: 24px;
+}
+.rhythm small {
+  font-size: 12.5px;
+}
+.rhythm li {
+  color: #77777c;
+}
+.finale h2 {
+  font-size: 32px;
+}
+.finale .copy .sub {
+  font-size: 13.5px;
+  color: #d4d4d9;
+}
+.light-tag {
+  font-size: 12.5px;
+  color: #a5a5ab;
+}
+.nav {
+  font-size: 14px;
+}
+.nav-btn {
+  font-size: 13.5px;
+  padding: 7px 16px;
+  font-weight: 600;
+}
+.cta {
+  font-size: 16px;
+  font-weight: 600;
+  padding: 12px 26px;
+}
+
+/* ---------- 滑動提示：依裝置顯示（手機＝手指往上推、電腦＝滾輪往下） ---------- */
+.scroll-hint {
+  font-size: 15px;
+}
+.scroll-hint .hint-touch {
+  display: none;
+}
+@media (hover: none) and (pointer: coarse) {
+  .scroll-hint .hint-touch {
+    display: inline;
+  }
+  .scroll-hint .hint-mouse {
+    display: none;
+  }
+  /* 箭頭朝上、放在文字上方，往上跳動 */
+  .scroll-hint {
+    flex-direction: column-reverse;
+  }
+  .scroll-hint i {
+    animation-name: hintbob-up;
+  }
+}
+@keyframes hintbob-up {
+  0%,
+  100% {
+    transform: translateY(0) rotate(-135deg);
+    opacity: 0.6;
+  }
+  50% {
+    transform: translateY(-7px) rotate(-135deg);
+    opacity: 1;
+  }
+}
+/* 開場鎖定期間（還不能滑）：顯示狀態，讓人知道不是壞掉 */
+.lock-hint {
+  position: fixed;
+  z-index: 12;
+  left: 50%;
+  bottom: calc(40px + env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  margin: 0;
+  font-size: 13.5px;
+  letter-spacing: 0.3em;
+  padding-left: 0.3em;
+  color: #d4d4d9;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.6s ease;
+  animation: lockpulse 1.6s ease-in-out infinite;
+}
+html.intro-lock body.ready .lock-hint {
+  opacity: 1;
+}
+@keyframes lockpulse {
+  50% {
+    color: #77777c;
+  }
+}
+
+/* ---------- 章節圓點：目前在第幾段、還有幾段；點一下可跳過去 ---------- */
+.dots {
+  position: fixed;
+  z-index: 11;
+  right: calc(var(--gutter) - 14px);
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  transition: opacity 0.6s ease;
+}
+html.intro-lock .dots {
+  opacity: 0;
+  pointer-events: none;
+}
+.dots button {
+  all: unset;
+  cursor: pointer;
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  position: relative;
+}
+.dots button::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.75);
+  box-shadow: 0 0 6px rgba(0, 0, 0, 0.9);
+  transition: background 0.3s, transform 0.3s, box-shadow 0.3s;
+}
+.dots button.on::before {
+  background: #fff;
+  transform: scale(1.5);
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.9);
+}
+.dots button:focus-visible::before {
+  outline: 2px solid #fff;
+  outline-offset: 3px;
+}
+/* 電腦：滑鼠移上去顯示章節名稱 */
+.dots button span {
+  position: absolute;
+  right: 30px;
+  white-space: nowrap;
+  font-size: 12.5px;
+  letter-spacing: 0.12em;
+  color: #fff;
+  text-shadow: 0 0 8px #000, 0 0 3px #000;
+  opacity: 0;
+  transition: opacity 0.25s;
+  pointer-events: none;
+}
+@media (hover: hover) {
+  .dots button:hover span {
+    opacity: 1;
+  }
+}
+
+/* ---------- 章節裡的 3D 檢視入口 ---------- */
+.copy .more {
+  display: inline-block;
+  margin-top: 16px;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: #fff;
+  text-decoration: none;
+  padding: 8px 16px;
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.45);
+  text-shadow: none;
+}
+.copy .more:hover {
+  background: #fff;
+  color: #000;
+}
+.chapter:not(.on) .copy .more {
+  pointer-events: none;
+}
+
+/* ---------- 3D 檢視頁：進場的操作提示 ---------- */
+.gesture-tip {
+  position: fixed;
+  z-index: 20;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 16px 24px;
+  border-radius: 16px;
+  background: rgba(0, 0, 0, 0.62);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  color: #fff;
+  white-space: nowrap;
+  pointer-events: none;
+  transition: opacity 0.6s ease;
+}
+.gesture-tip small {
+  font-size: 12.5px;
+  font-weight: 400;
+  color: #c2c2c8;
+  letter-spacing: 0.08em;
+}
+.gesture-tip.hide {
+  opacity: 0;
+}
+
+@media (max-width: 720px) {
+  .copy {
+    max-width: 72%;
+  }
+  .copy h2 {
+    font-size: 25px;
+  }
+  .copy p {
+    font-size: 15px;
+  }
+  .lead {
+    font-size: 16px !important;
+  }
+  .lead .sub {
+    font-size: 13.5px;
+  }
+  .hero .copy {
+    max-width: 86%;
+  }
+  .finale .copy {
+    max-width: none;
+  }
+  .finale .copy h2 {
+    font-size: 22px;
+  }
+  .finale .copy p {
+    font-size: 14.5px;
+  }
+  .dots {
+    right: 2px;
+  }
+  .dots button {
+    width: 24px;
+    height: 26px;
+  }
+}
+
+/* ---------- 設計者署名（要明顯） ---------- */
+.copy .credit {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 12px;
+  margin: 14px 0 16px;
+  padding: 10px 0 10px 14px;
+  border-left: 2px solid #fff;
+  color: #fff;
+}
+.credit small {
+  font-size: 12.5px;
+  letter-spacing: 0.3em;
+  color: #c2c2c8;
+  width: 100%;
+}
+.credit b {
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  line-height: 1.2;
+}
+.credit span {
+  font-size: 16px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+}
+.finale .copy .credit {
+  display: inline-flex;
+  justify-content: center;
+  border-left: 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.6);
+  padding: 12px 8px 0;
+  margin: 14px auto 0;
+}
+.finale .credit small {
+  width: auto;
+}
+.nav-credit {
+  margin-left: 14px;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: #fff;
+}
+@media (max-width: 720px) {
+  .credit b {
+    font-size: 24px;
+  }
+  .credit span {
+    font-size: 14.5px;
+  }
+  .finale .credit b {
+    font-size: 19px;
+  }
+  .finale .credit span {
+    font-size: 13.5px;
+  }
+  .nav-credit {
+    display: block;
+    margin: 2px 0 0;
+    font-size: 11.5px;
+  }
+}
+
+/* ---------- 章節內第二段文字、設計者的話 ---------- */
+.copy p + p:not(.credit):not(.sub) {
+  margin-top: 10px;
+}
+.statement {
+  margin: 14px auto 0;
+  padding: 0;
+  max-width: 30em;
+  font-size: 15px;
+  line-height: 1.8;
+  letter-spacing: 0.08em;
+  color: #fff;
+  font-weight: 500;
+}
+.statement::before {
+  content: "「";
+}
+.statement::after {
+  content: "」";
+}
+@media (max-width: 720px) {
+  .statement {
+    font-size: 13.5px;
+  }
+}
+
+/* 結尾的「進入 3D 檢視」：自己一行，放在署名下面（前面的章節不提供入口） */
+.cta-row {
+  display: block;
+  margin: 18px 0 0 !important;
+}
+.cta-row .cta {
+  margin-top: 0;
+}
+.chapter:not(.on) .cta {
+  pointer-events: none;
+}
+
+/* ============================================================
+   3D 檢視頁：手機版面（2026-11-20）
+   ============================================================ */
+.viewbar {
+  display: none;
+}
+@media (max-width: 720px) {
+  /* 視角：常駐在畫面下方的一排大按鈕，可左右滑 */
+  .viewbar {
+    display: block;
+    position: fixed;
+    z-index: 9;
+    left: 0;
+    right: 0;
+    bottom: calc(62px + env(safe-area-inset-bottom));
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding: 6px 12px;
+    transition: opacity 0.3s ease;
+    /* 左右邊緣淡出：看得出還能往旁邊滑 */
+    -webkit-mask-image: linear-gradient(90deg, transparent, #000 14px, #000 calc(100% - 28px), transparent);
+    mask-image: linear-gradient(90deg, transparent, #000 14px, #000 calc(100% - 28px), transparent);
+  }
+  .viewbar::-webkit-scrollbar {
+    display: none;
+  }
+  .viewbar .seg {
+    flex-wrap: nowrap;
+    width: max-content;
+    margin: 0;
+    gap: 8px;
+    padding-right: 20px;
+  }
+  .viewbar .seg button {
+    flex: 0 0 auto;
+    min-height: 44px;
+    padding: 10px 18px;
+    font-size: 15px;
+    font-weight: 600;
+    color: #fff;
+    background: rgba(22, 22, 24, 0.78);
+    border-color: rgba(255, 255, 255, 0.3);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+  .viewbar .seg button[aria-pressed="true"] {
+    background: #f5f5f7;
+    color: #000;
+  }
+  body.panel-open .viewbar {
+    opacity: 0;
+    pointer-events: none;
+  }
+  /* 底部面板：把手加高、字加大、每個控制項都有足夠的觸控面積 */
+  .panel {
+    max-height: 58dvh;
+    font-size: 15px;
+    padding: 0 18px calc(18px + env(safe-area-inset-bottom));
+    transform: translateY(calc(100% - 56px - env(safe-area-inset-bottom)));
+    overscroll-behavior: contain;
+  }
+  .panel-toggle {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    min-height: 56px;
+    padding: 8px 0 10px;
+    font-size: 15px;
+    font-weight: 600;
+    background: rgba(22, 22, 24, 0.9);
+  }
+  .panel-toggle::after {
+    content: " ▲";
+    font-size: 11px;
+    opacity: 0.7;
+  }
+  .panel.open .panel-toggle::after {
+    content: " ▼";
+  }
+  .panel h3 {
+    font-size: 12.5px;
+    margin-bottom: 6px;
+  }
+  .panel .group {
+    padding: 14px 0;
+  }
+  .panel .seg button {
+    min-height: 44px;
+    padding: 10px 16px;
+    font-size: 15px;
+  }
+  .panel label.row {
+    grid-template-columns: 84px 1fr 44px;
+    margin-top: 6px;
+    min-height: 44px;
+  }
+  .panel input[type="range"] {
+    height: 32px;
+  }
+  .panel .check {
+    min-height: 44px;
+    margin-top: 0;
+  }
+  .panel .check input {
+    width: 22px;
+    height: 22px;
+    accent-color: #fff;
+  }
+  /* 提示放到上方，不被底部按鈕擋住 */
+  .detail-tip {
+    bottom: auto;
+    top: calc(96px + env(safe-area-inset-top));
+    font-size: 13px;
+    color: #d4d4d9;
+  }
+  .gesture-tip {
+    top: 40%;
+    white-space: normal;
+    width: max-content;
+    max-width: 86vw;
+    text-align: center;
+    font-size: 15px;
+    line-height: 1.6;
+  }
+  .viewer .nav {
+    height: auto;
+    min-height: 48px;
+    padding-bottom: 6px;
+  }
+  .viewer .nav-btn {
+    min-height: 36px;
+    display: inline-flex;
+    align-items: center;
+    flex: 0 0 auto;
+  }
+  .viewer .light-tag {
+    top: calc(72px + env(safe-area-inset-top));
+    font-size: 13px;
+  }
+}
+
+/* 面板裡暫不顯示的控制項（抓住蛹、顯現：保留給截圖參數用） */
+.panel [hidden] {
+  display: none !important;
 }

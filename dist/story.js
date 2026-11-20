@@ -64,7 +64,25 @@ function updateActive(holding) {
   activeSec?.classList.remove("on");
   cur.classList.add("on");
   activeSec = cur;
+  dotBtns.forEach((b, i) => {
+    b.classList.toggle("on", sections[i] === cur);
+    b.setAttribute("aria-current", sections[i] === cur ? "true" : "false");
+  });
 }
+// 章節圓點：顯示目前在第幾段，點一下跳到該段
+const dotNames = { hero: "開場", emerge: "破蛹而出", face: "帽沿與臉", fabric: "煙霧與呼吸", tail: "針織魚尾", finale: "破蛹" };
+const dotBtns = sections.map((s) => {
+  const b = document.createElement("button");
+  b.type = "button";
+  b.setAttribute("aria-label", dotNames[s.dataset.key] ?? "");
+  b.innerHTML = `<span>${dotNames[s.dataset.key] ?? ""}</span>`;
+  b.addEventListener("click", () => {
+    if (document.documentElement.classList.contains("intro-lock")) return;
+    window.scrollTo({ top: Math.round(scrollY + s.getBoundingClientRect().top) + 2, behavior: "instant" });
+  });
+  document.querySelector(".dots")?.append(b);
+  return b;
+});
 updateActive(null);
 // 影片起始畫面：直式視窗（fov 40、距離 ×1.25）下 dist 1.7 → 畫面半高 0.773 m；橫式 fov 30 要同樣半高
 const finaleDist = () => (innerWidth / innerHeight < 0.75 ? 1.7 : (1.7 * 1.25 * Math.tan(THREE.MathUtils.degToRad(20))) / Math.tan(THREE.MathUtils.degToRad(15)));

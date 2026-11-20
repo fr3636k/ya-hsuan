@@ -113,29 +113,21 @@ const panel = $("panel");
 $("panelToggle").addEventListener("click", () => {
   const open = panel.classList.toggle("open");
   $("panelToggle").setAttribute("aria-expanded", String(open));
+  document.body.classList.toggle("panel-open", open);
 });
-
-/* ---------- 本機參考照片（serve.mjs 提供；發布版不存在則隱藏） ---------- */
-fetch("./_ref/list.json")
-  .then((r) => (r.ok ? r.json() : Promise.reject()))
-  .then((list) => {
-    if (!list.length) return;
-    const big = $("refBig");
-    list.forEach((name) => {
-      const img = new Image();
-      img.loading = "lazy";
-      img.src = `./_ref/${encodeURIComponent(name)}`;
-      img.alt = name;
-      img.addEventListener("click", () => {
-        big.src = img.src;
-        big.classList.add("show");
-      });
-      $("refs").append(img);
-    });
-    big.addEventListener("click", () => big.classList.remove("show"));
-    $("refGroup").hidden = false;
-  })
-  .catch(() => {});
+// 手機：視角按鈕最常用 → 從面板搬到畫面下方常駐的一排（可左右滑），不用先打開面板
+{
+  const mq = matchMedia("(max-width: 720px)");
+  const viewsEl = $("views");
+  const home = viewsEl.parentElement;
+  const after = viewsEl.nextElementSibling;
+  const bar = document.createElement("div");
+  bar.className = "viewbar";
+  document.body.append(bar);
+  const place = () => (mq.matches ? bar.append(viewsEl) : home.insertBefore(viewsEl, after));
+  mq.addEventListener("change", place);
+  place();
+}
 
 addEventListener("resize", () => fitCamera(renderer, camera));
 fitCamera(renderer, camera);
@@ -165,6 +157,24 @@ ui.done();
     document.body.dataset.full = "1";
     setTimeout(() => tip.remove(), 800);
   });
+}
+
+// 進場的操作提示：一動手（或 6 秒後）就消失
+{
+  const touch = matchMedia("(hover: none) and (pointer: coarse)").matches;
+  const g = document.createElement("div");
+  g.className = "gesture-tip";
+  g.innerHTML = touch
+    ? "單指拖曳旋轉・兩指縮放<small>下方按鈕切換視角・「燈光與效果」調整白光</small>"
+    : "按住拖曳旋轉・滾輪縮放<small>右側面板可切換視角與燈光</small>";
+  document.body.append(g);
+  const hideTip = () => {
+    g.classList.add("hide");
+    setTimeout(() => g.remove(), 800);
+    controls.removeEventListener("start", hideTip);
+  };
+  controls.addEventListener("start", hideTip);
+  setTimeout(hideTip, 6000);
 }
 
 const tagSteps = [...document.querySelectorAll(".lt-step")];
