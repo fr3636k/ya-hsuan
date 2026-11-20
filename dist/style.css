@@ -1294,3 +1294,114 @@ html.intro-lock .dots {
 .panel [hidden] {
   display: none !important;
 }
+
+/* ============================================================
+   2026-11-20 手機版面收斂：字太大、太粗，蓋住模型 → 字級降一階、字重減輕、文字欄收窄
+   （桌機不變）
+   ============================================================ */
+@media (max-width: 720px) {
+  .copy {
+    max-width: 60%;
+  }
+  .copy h2 {
+    font-size: 20px;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    margin-bottom: 10px;
+  }
+  .copy p {
+    font-size: 13px;
+    font-weight: 400;
+    line-height: 1.8;
+    color: #e4e4e8;
+  }
+  .copy p + p:not(.credit):not(.sub) {
+    margin-top: 8px;
+  }
+  .copy .num {
+    font-size: 10.5px;
+    margin-bottom: 6px;
+  }
+  /* 開場 */
+  .hero .copy {
+    max-width: 78%;
+    bottom: 13vh;
+  }
+  .eyebrow {
+    font-size: 10px !important;
+  }
+  .hero h1 {
+    font-size: 36px;
+    letter-spacing: 0.18em;
+  }
+  .copy .credit {
+    margin: 10px 0 12px;
+    padding: 6px 0 6px 12px;
+    border-left-width: 1px;
+    gap: 2px 10px;
+  }
+  .credit small {
+    font-size: 10px;
+  }
+  .credit b {
+    font-size: 19px;
+    font-weight: 600;
+    letter-spacing: 0.2em;
+  }
+  .credit span {
+    font-size: 12px;
+    font-weight: 400;
+  }
+  .lead {
+    font-size: 14px !important;
+  }
+  .lead .sub {
+    font-size: 12px;
+    line-height: 1.75;
+  }
+  /* 燈光章節的「亮 暗 閃」 */
+  .rhythm b {
+    font-size: 19px;
+  }
+  .rhythm small {
+    font-size: 10.5px;
+  }
+  /* 結尾 */
+  .finale .copy h2 {
+    font-size: 18px;
+    margin-bottom: 6px;
+  }
+  .finale .copy p {
+    font-size: 12.5px;
+    line-height: 1.7;
+  }
+  .statement {
+    font-size: 12.5px;
+  }
+  .finale .copy .credit {
+    padding-top: 10px;
+    margin-top: 12px;
+  }
+  .finale .credit b {
+    font-size: 16px;
+  }
+  .finale .credit span {
+    font-size: 12px;
+  }
+  .cta {
+    font-size: 14px;
+  }
+  .cta-row {
+    margin-top: 14px !important;
+  }
+  /* 導覽與提示 */
+  .nav {
+    font-size: 13px;
+  }
+  .scroll-hint {
+    font-size: 13px;
+  }
+  .light-tag {
+    font-size: 11px;
+  }
+}
