@@ -59,15 +59,49 @@
 
 `viewer.html` 是自由旋轉檢視模型、切換燈光的頁面，入口只放在首頁最後一幕（署名下方的「進入 3D 檢視」），前面的章節不提供。
 
+## 專案架構
+
+這是一個**純靜態網站**：沒有後端、沒有前端框架、也沒有打包步驟。瀏覽器直接讀取 `dist/` 裡手寫的 HTML、CSS 與 JavaScript 模組（ES Modules），3D 畫面用 Three.js。
+
+整個專案分成三層：
+
+| 層 | 位置 | 做什麼 |
+|---|---|---|
+| 網站本體 | `dist/` | 實際發布的內容，推上 `main` 後原封不動發布到 GitHub Pages |
+| 素材製作 | `scripts/` | 在本機把原始 3D 模型、AI 影片處理成網站用的檔案，結果寫進 `dist/models/`、`dist/media/` |
+| 本機預覽 | `serve.mjs`、`start-preview.ps1` | 在電腦上開一個預覽用的小伺服器 |
+
+```
+dist/                    網站本體（就是發布的內容）
+├─ index.html            首頁：捲動敘事
+├─ viewer.html           3D 自由檢視頁
+├─ css/style.css         兩個頁面共用的樣式
+├─ js/                   自己寫的程式
+│  ├─ story.js           首頁主程式：章節鏡頭、開場、結尾影片
+│  ├─ viewer.js          檢視頁主程式：旋轉、視角、燈光控制
+│  ├─ stage.js           兩頁共用：場景、燈光節奏、載入畫面
+│  ├─ garment-glb.js     兩頁共用：載入模型、發光與布面效果
+│  ├─ grip-seq.js        結尾影片的畫格播放
+│  └─ model-config.js    模型路徑與效果參數
+├─ vendor/               第三方程式（Three.js 與模型解碼器），不要手改
+├─ models/               網站用的 3D 模型
+└─ media/grip/           結尾影片的畫格
+scripts/                 素材製作腳本（Python、Blender）
+doc/                     設計理念原稿
+.github/workflows/       自動發布設定
+```
+
+只留本機、不進版本庫的資料夾見文末。
+
 ## 維護
 
 | 要改的 | 位置 |
 |---|---|
 | 章節文字、設計者署名 | `dist/index.html` |
-| 字體大小、操作提示的樣式 | `dist/style.css` |
-| 各章鏡頭、開場時間軸、章節圓點 | `dist/story.js` |
-| 燈光節奏 | `dist/stage.js` 的 `RHYTHM` |
-| 發光、燈籠、布面效果參數 | `dist/model-config.js` |
+| 字體大小、操作提示的樣式 | `dist/css/style.css` |
+| 各章鏡頭、開場時間軸、章節圓點 | `dist/js/story.js` |
+| 燈光節奏 | `dist/js/stage.js` 的 `RHYTHM` |
+| 發光、燈籠、布面效果參數 | `dist/js/model-config.js` |
 | 模型處理（V2 Tripo → 網頁用） | `scripts/process-model.py --tripo`、`scripts/draco-compress.py` |
 | 快速載入用的預覽模型 | Blender `scripts/make-preview-src.py` → `npx gltfpack -i 輸入 -o dist/models/emerge-c-preview.glb -cc -si 0.015 -sa` |
 | 結尾影片換新 | `python scripts/grip-frames.py <影片.mp4> --sharp-eyes` |

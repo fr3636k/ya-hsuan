@@ -1,6 +1,6 @@
 // 3D 檢視子網頁：自由旋轉、細節視角、破蛹與白光調整。
 import * as THREE from "three";
-import { OrbitControls } from "./vendor/OrbitControls.js";
+import { OrbitControls } from "../vendor/OrbitControls.js";
 import { createStage, fitCamera, loaderUI, rhythmAt } from "./stage.js";
 import { loadGarment, HEIGHT } from "./garment-glb.js";
 import { MODEL } from "./model-config.js";

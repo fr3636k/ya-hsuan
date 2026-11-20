@@ -3,9 +3,9 @@
 // - 照片臉部投影（取代 AI 生成的模糊臉）
 // - 破蛹顯現（由下往上溶解）、LED 光點、內部光暈、臉部補光、絲線外繭、光塵
 import * as THREE from "three";
-import { GLTFLoader } from "./vendor/GLTFLoader.js";
-import { DRACOLoader } from "./vendor/DRACOLoader.js";
-import { MeshoptDecoder } from "./vendor/meshopt_decoder.module.js";
+import { GLTFLoader } from "../vendor/GLTFLoader.js";
+import { DRACOLoader } from "../vendor/DRACOLoader.js";
+import { MeshoptDecoder } from "../vendor/meshopt_decoder.module.js";
 
 export const HEIGHT = 1.75;
 const clamp01 = (x) => Math.min(1, Math.max(0, x));
@@ -29,7 +29,7 @@ const additive = (map, extra = {}) => ({ map, transparent: true, depthWrite: fal
 
 // 完整模型用 Draco 壓縮（解碼器在 vendor/draco）；預覽模型用 meshopt 壓縮（解碼快、不需背景執行緒）
 function gltfLoader() {
-  const draco = new DRACOLoader().setDecoderPath(new URL("./vendor/draco/", import.meta.url).href);
+  const draco = new DRACOLoader().setDecoderPath(new URL("../vendor/draco/", import.meta.url).href);
   return new GLTFLoader().setDRACOLoader(draco).setMeshoptDecoder(MeshoptDecoder);
 }
 

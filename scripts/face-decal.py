@@ -3,7 +3,7 @@
 用法：python scripts/face-decal.py <影片.mp4> <格數> dist/textures/face-video.png
 - 影片是用最後一章的起始畫面（viewer 鏡頭 cam=0,3,1.7,0.72、720x1280）生成，Wan 輸出 480x832（等寬縮放、上下裁切）。
 - 對臉部範圍內每個 3D 點（z 取臉部曲面擬合），用同一個鏡頭投影到影片像素取色 → 正面投影貼圖。
-- 輸出 RGBA：A 為臉部羽化遮罩（眼、鼻、嘴、臉頰），範圍與 dist/model-config.js 的 face.rect 一致。
+- 輸出 RGBA：A 為臉部羽化遮罩（眼、鼻、嘴、臉頰），範圍與 dist/js/model-config.js 的 face.rect 一致。
 """
 import json
 import sys

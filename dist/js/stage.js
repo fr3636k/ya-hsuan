@@ -1,6 +1,6 @@
 // 共用：場景、燈光、白光節奏。
 import * as THREE from "three";
-import { RoomEnvironment } from "./vendor/RoomEnvironment.js";
+import { RoomEnvironment } from "../vendor/RoomEnvironment.js";
 
 /* 白光節奏：亮 → 暗 → 閃一下，循環 */
 export const RHYTHM = [

@@ -23,12 +23,12 @@ import trimesh
 from PIL import Image
 
 HEIGHT = 1.75
-# 調整參數（與 dist/model-config.js 的說明對應）
+# 調整參數（與 dist/js/model-config.js 的說明對應）
 FABRIC_MAX_SAT = 0.13  # 布面：飽和度上限（臉、手偏暖色不處理）
 FABRIC_MIN_VAL = 0.22  # 布面：亮度下限（排除黑髮）
 FABRIC_LIFT = (0.52, 0.95)  # 輸出亮度 = 0.52 + (原亮度 - 0.3) × 0.95
 SKIN_LIFT = 1.15
-SKIN_RGB = (0.83, 0.72, 0.665)  # 與 dist/model-config.js 的 skin 相同（#d4b8aa）
+SKIN_RGB = (0.83, 0.72, 0.665)  # 與 dist/js/model-config.js 的 skin 相同（#d4b8aa）
 MASK_MIN_VAL = 0.3
 GLOW_BAND = (0.53, 1.0)  # 發光的高度範圍（相對身高）
 LED_COUNT = 260
