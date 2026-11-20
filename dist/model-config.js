@@ -27,6 +27,7 @@ export const MODEL = {
     openCenterX: 0.0,
     openPush: 0.05,
     faceBox: [0.075, 1.3, 1.72, 0.0], // 臉的範圍（公尺）：半寬、下緣、上緣、最小 z
+    skinBand: [1.1, 1.18], // 露腰範圍（公尺）：網格背面顯示膚色
     faceLight: 6, // 打在臉上的柔光（帽兜陰影裡的臉才不會灰暗）
     face: null, // 臉用 Tripo 原本的臉（只加強平滑）；影片臉投影的工具保留在 scripts/face-decal.py
     knot: null,

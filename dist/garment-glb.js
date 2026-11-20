@@ -85,6 +85,8 @@ export async function loadGarment(url, cfg = {}, onProgress) {
     uFacing: { value: cfg.facingGlow ?? 0 },
     uCocoonShade: { value: cfg.cocoonShade ?? 0 },
     uFaceBox: { value: new THREE.Vector4(...(cfg.faceBox ?? [0, 0, 0, 9])) },
+    // 露腰的高度範圍（公尺）：這裡的網格背面顯示貼圖的膚色，不當成白布內側
+    uSkinBand: { value: new THREE.Vector2(...(cfg.skinBand ?? [0, 0])) },
   };
   if (faceTex) {
     faceTex.colorSpace = THREE.SRGBColorSpace;
@@ -131,6 +133,7 @@ export async function loadGarment(url, cfg = {}, onProgress) {
 varying vec3 vWPos;
 varying vec3 vWNrm;
 uniform vec4 uFaceBox;
+uniform vec2 uSkinBand;
 uniform float uFacing, uCocoonShade;
 float faceZone = 0.0;
 uniform vec3 uFaceFitA, uFaceFitB;
@@ -235,7 +238,8 @@ diffuseColor.rgb *= 1.0 - gauze * 0.12;
 diffuseColor.rgb *= 1.0 - uCocoonShade * cocoon; // 蛹的布外表略暗，讓內部透出的光成為主角
 // 臉、身體的皺褶（眼皮、鼻孔）露出的網格背面：是陰影，不是布的內側 → 壓暗，避免出現白線
 // 網格背面：臉部（眼皮、鼻孔）壓暗成陰影；其他地方是白布的內側 → 一律柔和白色（摺縫露出的背面不會出現刮痕或怪顏色）
-if (!gl_FrontFacing) diffuseColor.rgb = mix(vec3(0.8, 0.8, 0.82), diffuseColor.rgb * 0.25, faceZone);`,
+float skinBand = step(uSkinBand.x, vWPos.y) * step(vWPos.y, uSkinBand.y);
+if (!gl_FrontFacing && skinBand < 0.5) diffuseColor.rgb = mix(vec3(0.8, 0.8, 0.82), diffuseColor.rgb * 0.25, faceZone);`,
         )
         .replace(
           "#include <roughnessmap_fragment>",
