@@ -297,11 +297,11 @@ function frame() {
   for (const f of NUM) cur[f] += (goal[f] - cur[f]) * k;
   for (let i = 0; i < 3; i++) cur.t[i] += (goal.t[i] - cur.t[i]) * k;
 
-  // 到了最後定點、鏡頭停穩後，播放 AI 抓殼影片：雙手從蛹裡伸出、手指一根根抓住殼、再往外撐開（約 8 秒）；往回滑則倒帶收回
+  // 到了最後定點、鏡頭停穩後，播放 AI 抓殼影片：雙手從蛹裡伸出、手指一根根抓住殼、另一隻手抓住殼的邊緣（約 10 秒）；往回滑則倒帶收回
   const endW = Math.max(0, Math.min(1, (fi - (keys.length - 2)) / 1)) ** 2;
   const atEnd = (forced !== null ? forced : fi) > keys.length - 1.15;
   const settled = Math.abs(cur.dist - goal.dist) < 0.06 && Math.abs(cur.az - goal.az) < 1.5 && Math.abs(cur.t[1] - goal.t[1]) < 0.01;
-  grip = Math.min(1, Math.max(0, grip + (atEnd && (settled || grip > 0) ? dt / 8 : -dt / 3))); // 約 8 秒播完
+  grip = Math.min(1, Math.max(0, grip + (atEnd && (settled || grip > 0) ? dt / 10 : -dt / 3))); // 約 10 秒播完
   if (gripFixed !== null) grip = +gripFixed;
   const gripEased = grip * grip * (3 - 2 * grip);
   // 開場時間軸
